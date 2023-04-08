@@ -56,6 +56,7 @@ class stack_or_heap_memory
         if (other.is_heap())
         {
             data_ = other.data_;
+            other.data_ = other.stackMemory_;
         }
 
         // Copy stack memory.
