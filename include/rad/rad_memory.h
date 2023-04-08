@@ -122,6 +122,12 @@ struct debug_memory_alloc_info
         (ptr), (size), (alignment), RAD_GET_DEBUG_MEMORY_ALLOC_INFO())
 
     #define RAD_FREE_ALIGNED(ptr) ::rad::detail_::free_aligned_debug_(ptr)
+
+    #define RAD_NEW_DEBUG(type, allocInfo, ...)\
+        new ((allocInfo), __VA_ARGS__) type
+
+    #define RAD_NEW(type, ...) RAD_NEW_DEBUG(type,\
+        RAD_GET_DEBUG_MEMORY_ALLOC_INFO(), __VA_ARGS__)
 #else
     #define RAD_GET_DEBUG_MEMORY_ALLOC_INFO()
 
@@ -154,7 +160,35 @@ struct debug_memory_alloc_info
         RAD_REALLOC_ALIGNED_DEBUG((ptr), (size), (alignment), dummy_)
 
     #define RAD_FREE_ALIGNED(ptr) ::rad::detail_::free_aligned_(ptr)
+
+    #define RAD_NEW_DEBUG(type, allocInfo, ...)\
+        new (__VA_ARGS__) type
+
+    #define RAD_NEW(type, ...) RAD_NEW_DEBUG(type,\
+        dummy_, __VA_ARGS__)
 #endif
 } // rad
+
+#if RAD_USE_OPERATOR_NEW_DELETE_REPLACEMENTS == 1
+    void* operator new(std::size_t count, rad::debug_memory_alloc_info allocInfo);
+
+    void* operator new[](std::size_t count, rad::debug_memory_alloc_info allocInfo);
+
+    void* operator new(std::size_t count, std::align_val_t al,
+        rad::debug_memory_alloc_info allocInfo);
+
+    void* operator new[](std::size_t count, std::align_val_t al,
+        rad::debug_memory_alloc_info allocInfo);
+
+    void operator delete(void* ptr, rad::debug_memory_alloc_info allocInfo) noexcept;
+
+    void operator delete[](void* ptr, rad::debug_memory_alloc_info allocInfo) noexcept;
+
+    void operator delete(void* ptr, std::align_val_t al,
+        rad::debug_memory_alloc_info allocInfo) noexcept;
+
+    void operator delete[](void* ptr, std::align_val_t al,
+        rad::debug_memory_alloc_info allocInfo) noexcept;
+#endif
 
 #endif

@@ -13,6 +13,7 @@
 #define RAD_PCH_IMPL_H_INCLUDED
 
 // Standard library includes
+#include <new>
 #include <cassert>
 
 // Windows platform includes
