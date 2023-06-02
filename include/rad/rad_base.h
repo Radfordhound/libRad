@@ -45,11 +45,9 @@
 #endif
 
 // Operator new/delete replacements
-
-// NOTE: This value MUST be set while compiling libRad,
-// otherwise the operators will still be replaced!
-
 #ifndef RAD_USE_OPERATOR_NEW_DELETE_REPLACEMENTS
+    // NOTE: If this value is not defined while compiling libRad,
+    // it will fallback to its default value of 1!
     #define RAD_USE_OPERATOR_NEW_DELETE_REPLACEMENTS 1
 #endif
 
