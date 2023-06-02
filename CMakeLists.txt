@@ -71,6 +71,7 @@ set(RAD_INCLUDES
 
 # Set sources
 set(RAD_SOURCES
+    "${RAD_SOURCE_DIR}/rad_memory_impl.cpp"
     "${RAD_SOURCE_DIR}/rad_memory_impl.h"
     "${RAD_SOURCE_DIR}/rad_pch_impl.h"
 )
