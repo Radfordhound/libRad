@@ -17,6 +17,7 @@
 
 namespace rad
 {
+// TODO: Use allocator
 template<std::size_t Size, std::size_t Alignment = alignof(unsigned char)>
 class stack_or_heap_memory
 {
@@ -101,7 +102,7 @@ public:
         return (data_ != stackMemory_);
     }
 
-    void reallocate(std::size_t size)
+    void reallocate(std::size_t size, bool preserveOldData = true)
     {
         if (is_heap())
         {
@@ -155,12 +156,13 @@ public:
                 throw std::bad_alloc();
             }
 
-            // Copy existing stack memory into new heap memory.
-
-            // NOTE: Since size > Size, the additional memory that comes
-            // after Size will be left uninitialized, similar to realloc.
-
-            std::memcpy(newData, data_, Size);
+            // Copy existing stack memory into new heap memory if requested.
+            if (preserveOldData)
+            {
+                // NOTE: Since size > Size, the additional memory that comes after
+                // Size will still be left uninitialized, similar to realloc.
+                std::memcpy(newData, data_, Size);
+            }
 
             // Assign new pointer if allocation succeeded.
 
@@ -177,6 +179,19 @@ public:
     {
         deallocate_();
         data_ = stackMemory_;
+    }
+
+    template<typename T = void>
+    T* release_heap() noexcept
+    {
+        if (!is_heap())
+        {
+            return nullptr;
+        }
+
+        const auto heapData = data<T>();
+        data_ = stackMemory_;
+        return heapData;
     }
 
     stack_or_heap_memory& operator=(const stack_or_heap_memory& other) = delete;
