@@ -21,6 +21,9 @@ namespace rad
 template<std::size_t Size, std::size_t Alignment = alignof(unsigned char)>
 class stack_or_heap_memory
 {
+    template<typename T, std::size_t MaxStackCount>
+    friend class stack_or_heap_array;
+
     void* data_;
     unsigned char alignas(Alignment) stackMemory_[Size];
 
