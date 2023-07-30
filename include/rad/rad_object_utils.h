@@ -150,11 +150,17 @@ constexpr void destruct(T& obj) noexcept
 
 template<typename Iterator>
 constexpr void destruct(Iterator begin, Iterator end) noexcept(
+    std::is_trivially_destructible_v<
+        typename std::iterator_traits<Iterator>::value_type> ||
     detail_::is_nothrow_iterable_v_<Iterator>)
 {
-    for (; begin != end; ++begin)
+    if constexpr (!std::is_trivially_destructible_v<
+        typename std::iterator_traits<Iterator>::value_type>)
     {
-        destruct(*begin);
+        for (; begin != end; ++begin)
+        {
+            destruct(*begin);
+        }
     }
 }
 
