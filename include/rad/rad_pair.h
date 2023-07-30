@@ -18,19 +18,19 @@ namespace rad
 namespace detail_
 {
 template<typename T1, typename T2>
-constexpr bool is_default_constructible_v_ = (
+constexpr bool is_default_constructible_v = (
     std::is_default_constructible_v<T1> &&
     std::is_default_constructible_v<T2>);
 
 template<typename T1, typename T2>
-constexpr bool is_nothrow_default_constructible_v_ = (
+constexpr bool is_nothrow_default_constructible_v = (
     std::is_nothrow_default_constructible_v<T1> &&
     std::is_nothrow_default_constructible_v<T2>);
 
 template<typename T1, typename T2,
     bool HasT1 = !std::is_empty_v<T1> && !std::is_final_v<T1>,
     bool HasT2 = !std::is_empty_v<T1> && !std::is_final_v<T1>>
-class compressed_pair_ final
+class compressed_pair final
 {
     T1 first_;
     T2 second_;
@@ -56,13 +56,13 @@ public:
         return second_;
     }
 
-    template<std::enable_if_t<is_default_constructible_v_<T1, T2>, int> = 0>
-    constexpr compressed_pair_() noexcept(
-        is_nothrow_default_constructible_v_<T1, T2>) = default;
+    template<std::enable_if_t<is_default_constructible_v<T1, T2>, int> = 0>
+    constexpr compressed_pair() noexcept(
+        is_nothrow_default_constructible_v<T1, T2>) {}
 };
 
 template<typename T1, typename T2>
-class compressed_pair_<T1, T2, false, true> final : private T1
+class compressed_pair<T1, T2, false, true> final : private T1
 {
     T2 second_;
 
@@ -87,13 +87,13 @@ public:
         return second_;
     }
 
-    template<std::enable_if_t<is_default_constructible_v_<T1, T2>, int> = 0>
-    constexpr compressed_pair_() noexcept(
-        is_nothrow_default_constructible_v_<T1, T2>) = default;
+    template<std::enable_if_t<is_default_constructible_v<T1, T2>, int> = 0>
+    constexpr compressed_pair() noexcept(
+        is_nothrow_default_constructible_v<T1, T2>) {}
 };
 
 template<typename T1, typename T2>
-class compressed_pair_<T1, T2, true, false> final : private T2
+class compressed_pair<T1, T2, true, false> final : private T2
 {
     T1 first_;
 
@@ -118,13 +118,13 @@ public:
         return *this;
     }
 
-    template<std::enable_if_t<is_default_constructible_v_<T1, T2>, int> = 0>
-    constexpr compressed_pair_() noexcept(
-        is_nothrow_default_constructible_v_<T1, T2>) = default;
+    template<std::enable_if_t<is_default_constructible_v<T1, T2>, int> = 0>
+    constexpr compressed_pair() noexcept(
+        is_nothrow_default_constructible_v<T1, T2>) {}
 };
 
 template<typename T1, typename T2>
-class compressed_pair_<T1, T2, false, false> final : private T1, private T2
+class compressed_pair<T1, T2, false, false> final : private T1, private T2
 {
 public:
     constexpr const T1& first() const noexcept
@@ -147,16 +147,16 @@ public:
         return *this;
     }
 
-    template<std::enable_if_t<is_default_constructible_v_<T1, T2>, int> = 0>
-    constexpr compressed_pair_() noexcept(
-        is_nothrow_default_constructible_v_<T1, T2>) = default;
+    template<std::enable_if_t<is_default_constructible_v<T1, T2>, int> = 0>
+    constexpr compressed_pair() noexcept(
+        is_nothrow_default_constructible_v<T1, T2>) {}
 };
 } // detail_
 
 template<typename T1, typename T2>
 class pair
 {
-    detail_::compressed_pair_<T1, T2> data_;
+    detail_::compressed_pair<T1, T2> data_;
 
 public:
     using first_type    = T1;
@@ -184,8 +184,8 @@ public:
 
     // TODO
 
-    template<std::enable_if_t<detail_::is_default_constructible_v_<T1, T2>, int> = 0>
-    constexpr pair() noexcept(detail_::is_nothrow_default_constructible_v_<T1, T2>) = default;
+    template<std::enable_if_t<detail_::is_default_constructible_v<T1, T2>, int> = 0>
+    constexpr pair() noexcept(detail_::is_nothrow_default_constructible_v<T1, T2>) {}
 
     //template<std::enable_if_t<detail::is_copy_constructible_v<T1, T2>, int> = 0>
     //constexpr explicit()
