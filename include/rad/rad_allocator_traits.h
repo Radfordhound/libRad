@@ -23,53 +23,83 @@ namespace rad
 namespace detail_
 {
 #if RAD_USE_DEBUG_MEMORY == 1
-    template<class Allocator, typename SizeType, class = void>
-    struct allocator_has_debug_allocate_ : std::false_type {};
+    template<class AllocatorTraits, class = void>
+    struct allocator_has_debug_allocate : std::false_type {};
 
-    template<class Allocator, typename SizeType>
-    struct allocator_has_debug_allocate_<Allocator, SizeType,
-        std::void_t<decltype(std::declval<Allocator&>().allocate(
-            std::declval<const SizeType&>(),                // count
-            std::declval<const debug_memory_alloc_info&>()  // allocInfo
+    template<class AllocatorTraits>
+    struct allocator_has_debug_allocate<AllocatorTraits, std::void_t<decltype(
+        std::declval<typename AllocatorTraits::allocator_type&>().allocate(
+            std::declval<const typename AllocatorTraits::size_type&>(), // count
+            std::declval<const debug_memory_alloc_info&>()              // allocInfo
         ))>> : std::true_type {};
 
-    template<class Allocator, typename PointerType, typename SizeType, class = void>
-    struct allocator_has_debug_reallocate_ : std::false_type {};
+    template<class AllocatorTraits, class = void>
+    struct allocator_has_debug_reallocate : std::false_type {};
 
-    template<class Allocator, typename PointerType, typename SizeType>
-    struct allocator_has_debug_reallocate_<Allocator, PointerType, SizeType,
-        std::void_t<decltype(std::declval<Allocator&>().reallocate(
-            std::declval<const PointerType&>(),             // ptr
-            std::declval<const SizeType&>(),                // oldAliveCount
-            std::declval<const SizeType&>(),                // oldCount
-            std::declval<const SizeType&>(),                // newCount
-            std::declval<const debug_memory_alloc_info&>()  // allocInfo
+    template<class AllocatorTraits>
+    struct allocator_has_debug_reallocate<AllocatorTraits, std::void_t<decltype(
+        std::declval<typename AllocatorTraits::allocator_type&>().reallocate(
+            std::declval<const typename AllocatorTraits::pointer&>(),   // ptr
+            std::declval<const typename AllocatorTraits::size_type&>(), // oldAliveCount
+            std::declval<const typename AllocatorTraits::size_type&>(), // oldCount
+            std::declval<const typename AllocatorTraits::size_type&>(), // newCount
+            std::declval<const debug_memory_alloc_info&>()              // allocInfo
         ))>> : std::true_type {};
+#else
+    template<class AllocatorTraits>
+    struct allocator_has_debug_allocate : std::false_type {};
+
+    template<class AllocatorTraits>
+    struct allocator_has_debug_reallocate : std::false_type {};
 #endif
 
-template<class Allocator, typename PointerType, typename SizeType, class = void>
-struct allocator_has_reallocate_ : std::false_type {};
+template<class AllocatorTraits, class = void>
+struct allocator_has_reallocate : std::false_type {};
 
-template<class Allocator, typename PointerType, typename SizeType>
-struct allocator_has_reallocate_<Allocator, PointerType, SizeType,
-    std::void_t<decltype(std::declval<Allocator&>().reallocate(
-        std::declval<const PointerType&>(),             // ptr
-        std::declval<const SizeType&>(),                // oldAliveCount
-        std::declval<const SizeType&>(),                // oldCount
-        std::declval<const SizeType&>()                 // newCount
+template<class AllocatorTraits>
+struct allocator_has_reallocate<AllocatorTraits, std::void_t<decltype(
+    std::declval<typename AllocatorTraits::allocator_type&>().reallocate(
+        std::declval<const typename AllocatorTraits::pointer&>(),   // ptr
+        std::declval<const typename AllocatorTraits::size_type&>(), // oldAliveCount
+        std::declval<const typename AllocatorTraits::size_type&>(), // oldCount
+        std::declval<const typename AllocatorTraits::size_type&>()  // newCount
+    ))>> : std::true_type {};
+
+template<class AllocatorTraits, class = void>
+struct allocator_has_destroy : std::false_type {};
+
+template<class AllocatorTraits>
+struct allocator_has_destroy<AllocatorTraits, std::void_t<decltype(
+    std::declval<typename AllocatorTraits::allocator_type&>().destroy(
+        std::declval<const typename AllocatorTraits::pointer&>()    // p
     ))>> : std::true_type {};
 } // detail_
 
 template<class Allocator>
 struct allocator_traits : public std::allocator_traits<Allocator>
 {
+private:
+    using this_type_    = allocator_traits<Allocator>;
+
+public:
+    static constexpr bool has_debug_allocate =
+        detail_::allocator_has_debug_allocate<this_type_>::value;
+
+    static constexpr bool has_reallocate =
+        detail_::allocator_has_reallocate<this_type_>::value;
+
+    static constexpr bool has_debug_reallocate =
+        detail_::allocator_has_debug_reallocate<this_type_>::value;
+
+    static constexpr bool has_destroy =
+        detail_::allocator_has_destroy<this_type_>::value;
+
     [[nodiscard]] static inline typename allocator_traits::pointer allocate(
         Allocator& allocator, typename allocator_traits::size_type count
         RAD_IF_DEBUG_MEMORY(, debug_memory_alloc_info allocInfo))
     {
 #if RAD_USE_DEBUG_MEMORY == 1
-        if constexpr (detail_::allocator_has_debug_allocate_<Allocator,
-            typename allocator_traits::size_type>::value)
+        if constexpr (has_debug_allocate)
         {
             return allocator.allocate(count, allocInfo);
         }
@@ -97,18 +127,14 @@ struct allocator_traits : public std::allocator_traits<Allocator>
 
         // Call reallocate on the allocator, if said function exists.
 #if RAD_USE_DEBUG_MEMORY == 1
-        if constexpr (detail_::allocator_has_debug_reallocate_<
-            Allocator, typename allocator_traits::pointer,
-            typename allocator_traits::size_type>::value)
+        if constexpr (has_debug_reallocate)
         {
             return allocator.reallocate(ptr, oldAliveCount,
                 oldCount, newCount, allocInfo);
         }
         else
 #endif
-        if constexpr (detail_::allocator_has_reallocate_<
-            Allocator, typename allocator_traits::pointer,
-            typename allocator_traits::size_type>::value)
+        if constexpr (has_reallocate)
         {
             return allocator.reallocate(
                 ptr, oldAliveCount, oldCount, newCount);
