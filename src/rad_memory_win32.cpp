@@ -54,53 +54,55 @@ void free_aligned_(void* ptr) noexcept
     _aligned_free(ptr);
 }
 
-void* allocate_debug_(std::size_t size,
-    debug_memory_alloc_info allocInfo) noexcept
-{
-    RAD_VALIDATE_ALLOC_ARGS(size)
+#if RAD_USE_DEBUG_MEMORY == 1
+    void* allocate_debug_(std::size_t size,
+        debug_memory_alloc_info allocInfo) noexcept
+    {
+        RAD_VALIDATE_ALLOC_ARGS(size)
 
-    return _malloc_dbg(size, _NORMAL_BLOCK,
-        allocInfo.filePath, allocInfo.lineNumber);
-}
+        return _malloc_dbg(size, _NORMAL_BLOCK,
+            allocInfo.filePath, allocInfo.lineNumber);
+    }
 
-void* reallocate_debug_(
-    void* ptr, std::size_t size,
-    debug_memory_alloc_info allocInfo) noexcept
-{
-    RAD_VALIDATE_ALLOC_ARGS(size)
+    void* reallocate_debug_(
+        void* ptr, std::size_t size,
+        debug_memory_alloc_info allocInfo) noexcept
+    {
+        RAD_VALIDATE_ALLOC_ARGS(size)
 
-    return _realloc_dbg(ptr, size, _NORMAL_BLOCK,
-        allocInfo.filePath, allocInfo.lineNumber);
-}
+        return _realloc_dbg(ptr, size, _NORMAL_BLOCK,
+            allocInfo.filePath, allocInfo.lineNumber);
+    }
 
-void free_debug_(void* ptr) noexcept
-{
-    _free_dbg(ptr, _NORMAL_BLOCK);
-}
+    void free_debug_(void* ptr) noexcept
+    {
+        _free_dbg(ptr, _NORMAL_BLOCK);
+    }
 
-void* allocate_aligned_debug_(
-    std::size_t size, std::size_t alignment,
-    debug_memory_alloc_info allocInfo) noexcept
-{
-    RAD_VALIDATE_ALIGNED_ALLOC_ARGS(size, alignment)
+    void* allocate_aligned_debug_(
+        std::size_t size, std::size_t alignment,
+        debug_memory_alloc_info allocInfo) noexcept
+    {
+        RAD_VALIDATE_ALIGNED_ALLOC_ARGS(size, alignment)
 
-    return _aligned_malloc_dbg(size, alignment,
-        allocInfo.filePath, allocInfo.lineNumber);
-}
+        return _aligned_malloc_dbg(size, alignment,
+            allocInfo.filePath, allocInfo.lineNumber);
+    }
 
-void* reallocate_aligned_debug_(
-    void* ptr, std::size_t size, std::size_t alignment,
-    debug_memory_alloc_info allocInfo) noexcept
-{
-    RAD_VALIDATE_ALIGNED_ALLOC_ARGS(size, alignment)
+    void* reallocate_aligned_debug_(
+        void* ptr, std::size_t size, std::size_t alignment,
+        debug_memory_alloc_info allocInfo) noexcept
+    {
+        RAD_VALIDATE_ALIGNED_ALLOC_ARGS(size, alignment)
 
-    return _aligned_realloc_dbg(ptr, size, alignment,
-        allocInfo.filePath, allocInfo.lineNumber);
-}
+        return _aligned_realloc_dbg(ptr, size, alignment,
+            allocInfo.filePath, allocInfo.lineNumber);
+    }
 
-void free_aligned_debug_(void* ptr) noexcept
-{
-    _aligned_free_dbg(ptr);
-}
+    void free_aligned_debug_(void* ptr) noexcept
+    {
+        _aligned_free_dbg(ptr);
+    }
+#endif
 } // detail_
 } // rad

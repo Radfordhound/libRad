@@ -53,18 +53,18 @@ RAD_API [[nodiscard]] void* reallocate_aligned_(
 RAD_API void free_aligned_(void* ptr) noexcept;
 } // detail_
 
-struct debug_memory_alloc_info
-{
-    const char* filePath;
-    unsigned int lineNumber;
-
-    constexpr debug_memory_alloc_info(
-        const char* filePath, unsigned int lineNumber) noexcept :
-        filePath(filePath),
-        lineNumber(lineNumber) {}
-};
-
 #if RAD_USE_DEBUG_MEMORY == 1
+    struct debug_memory_alloc_info
+    {
+        const char* filePath;
+        unsigned int lineNumber;
+
+        constexpr debug_memory_alloc_info(
+            const char* filePath, unsigned int lineNumber) noexcept :
+            filePath(filePath),
+            lineNumber(lineNumber) {}
+    };
+
     namespace detail_
     {
         RAD_API [[nodiscard]] void* allocate_debug_(std::size_t size,
@@ -161,15 +161,119 @@ struct debug_memory_alloc_info
 
     #define RAD_FREE_ALIGNED(ptr) ::rad::detail_::free_aligned_(ptr)
 
-    #define RAD_NEW_DEBUG(type, allocInfo, ...)\
-        new (__VA_ARGS__) type
+    /*
+    * Okay, so if we just try to do this:
+    *
+    *   new (__VA_ARGS__) (type)
+    * 
+    * and the user calls the macro like this:
+    * 
+    *   RAD_NEW(int)
+    * 
+    * it would expand to the following:
+    * 
+    *   new () (type)
+    * 
+    * Unfortunately, those empty parenthesis in this context are
+    * invalid, and this code will fail to compile!
+    * 
+    * So, we have to handle this case while still allowing the user
+    * to optionally pass in variable arguments if they want to.
+    * 
+    * This macro is thus implemented with some crazy complicated magic that does just that.
+    * It's hard to explain, but I'll try my best to give a good summary of how it works.
+    * 
+    * Basically, RAD_NEW_DEBUG_IMPL_HELPER2_ is where the magic happens.
+    * It grabs just the first of the variable arguments given to us by the user,
+    * and expands to the following:
+    * 
+    *   RAD_NEW_DEBUG_IMPL_HELPER3_ a ()
+    * 
+    * where a is the value of the first variable argument.
+    * By itself, this is a meaningless value.
+    * 
+    * But, if the user passes ZERO variable arguments into the macro, then,
+    * a will expand to NOTHING. This results in RAD_NEW_DEBUG_IMPL_HELPER2_
+    * expanding to the following:
+    * 
+    *   RAD_NEW_DEBUG_IMPL_HELPER3_ ()
+    * 
+    * This is where the magic happens. You see, this will actually result in the
+    * preprocessor "calling" RAD_NEW_DEBUG_IMPL_HELPER3_, thus expanding to the following:
+    * 
+    *   dummy_, new,
+    * 
+    * So basically, if we were given one or more variable arguments,
+    * RAD_NEW_DEBUG_IMPL_HELPER2_ will expand to the one "meaningless" value.
+    * 
+    * Otherwise, if we were given zero variable arguments, it will
+    * expand to two values.
+    * 
+    * This way, we can distinguish between having variable arguments and not.
+    * 
+    * The result of this expansion is "expanded" via RAD_NEW_DEBUG_IMPL_HELPER7_
+    * to work around a quirk with some compilers (mainly MSVC), and then, is
+    * passed into RAD_NEW_DEBUG_IMPL_HELPER4_, along with an extra argument:
+    * 
+    *   new (__VA_ARGS__)
+    * 
+    * RAD_NEW_DEBUG_IMPL_HELPER4_ then has to go through another macro -
+    * RAD_NEW_DEBUG_IMPL_HELPER5_ - to work around yet another
+    * quirk with some compilers (again, mainly MSVC).
+    * 
+    * Eventually, the result of all of this is passed into RAD_NEW_DEBUG_IMPL_HELPER6_,
+    * which is the second part of the magic. It simply expands to whatever its second
+    * argument is.
+    * 
+    * If there are one or more variable arguments, such as "a", "b", and "c",
+    * it will have the following as its arguments:
+    * 
+    *   argument 1: RAD_NEW_DEBUG_IMPL_HELPER3_ a ()
+    *   argument 2: new (a, b, c)
+    *   argument 3: dummy_
+    * 
+    * Thus, it will end up expanding to:
+    *   new (a, b, c)
+    * 
+    * Otherwise, if there are zero variable arguments,
+    * it will have the following as its arguments:
+    * 
+    *   argument 1: dummy_
+    *   argument 2: new
+    *   argument 3: new ()
+    * 
+    * It will end up expanding to:
+    *   new
+    * 
+    * From my testing, this approach works on all major compilers,
+    * with any number of variable arguments, and is standards-compliant
+    * enough to work even when compiled in pedantic mode.
+    */
+    #define RAD_NEW_DEBUG_IMPL_HELPER7_(a) a
+
+    #define RAD_NEW_DEBUG_IMPL_HELPER6_(a, b, ...) b
+
+    #define RAD_NEW_DEBUG_IMPL_HELPER5_(argsWithParenthesis) RAD_NEW_DEBUG_IMPL_HELPER6_ argsWithParenthesis
+
+    #define RAD_NEW_DEBUG_IMPL_HELPER4_(...) RAD_NEW_DEBUG_IMPL_HELPER5_((__VA_ARGS__))
+
+    #define RAD_NEW_DEBUG_IMPL_HELPER3_() dummy_, new,
+
+    #define RAD_NEW_DEBUG_IMPL_HELPER2_(a, ...) RAD_NEW_DEBUG_IMPL_HELPER3_ a ()
+
+    #define RAD_NEW_DEBUG_IMPL_HELPER1_(...) RAD_NEW_DEBUG_IMPL_HELPER7_(\
+        RAD_NEW_DEBUG_IMPL_HELPER2_(__VA_ARGS__, dummy_)) // dummy_ on this line is just to
+        // avoid compiler warnings that we didn't provide enough arguments.
+
+    #define RAD_NEW_DEBUG(type, allocInfo, ...) RAD_NEW_DEBUG_IMPL_HELPER4_(\
+        RAD_NEW_DEBUG_IMPL_HELPER1_(__VA_ARGS__), new (__VA_ARGS__), dummy_) (type)
 
     #define RAD_NEW(type, ...) RAD_NEW_DEBUG(type,\
         dummy_, __VA_ARGS__)
 #endif
 } // rad
 
-#if RAD_USE_OPERATOR_NEW_DELETE_REPLACEMENTS == 1
+#if RAD_USE_OPERATOR_NEW_DELETE_REPLACEMENTS == 1 && RAD_USE_DEBUG_MEMORY == 1
     void* operator new(std::size_t count, rad::debug_memory_alloc_info allocInfo);
 
     void* operator new[](std::size_t count, rad::debug_memory_alloc_info allocInfo);

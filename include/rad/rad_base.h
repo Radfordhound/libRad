@@ -6,6 +6,7 @@
  * @date 2023-04-07
  * 
  * @copyright Copyright (c) 2023 Graham Scott
+ * 
  */
 #ifndef RAD_BASE_H_INCLUDED
 #define RAD_BASE_H_INCLUDED
@@ -36,6 +37,8 @@
 #endif
 
 // Debug memory allocation
+// NOTE: If this value is not set to 1 while compiling libRad,
+// debug memory allocation functions will not be available!
 #ifndef RAD_USE_DEBUG_MEMORY
     #ifndef NDEBUG
         #define RAD_USE_DEBUG_MEMORY 1

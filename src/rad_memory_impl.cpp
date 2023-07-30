@@ -78,56 +78,6 @@ void* operator new[](std::size_t count,
     return RAD_ALLOC_ALIGNED(count, static_cast<std::size_t>(al));
 }
 
-void* operator new(std::size_t count, rad::debug_memory_alloc_info allocInfo)
-{
-    const auto ptr = RAD_ALLOC_DEBUG(count, allocInfo);
-    if (!ptr)
-    {
-        throw std::bad_alloc();
-    }
-
-    return ptr;
-}
-
-void* operator new[](std::size_t count, rad::debug_memory_alloc_info allocInfo)
-{
-    const auto ptr = RAD_ALLOC_DEBUG(count, allocInfo);
-    if (!ptr)
-    {
-        throw std::bad_alloc();
-    }
-
-    return ptr;
-}
-
-void* operator new(std::size_t count, std::align_val_t al,
-    rad::debug_memory_alloc_info allocInfo)
-{
-    const auto ptr = RAD_ALLOC_ALIGNED_DEBUG(count,
-        static_cast<std::size_t>(al), allocInfo);
-
-    if (!ptr)
-    {
-        throw std::bad_alloc();
-    }
-
-    return ptr;
-}
-
-void* operator new[](std::size_t count, std::align_val_t al,
-    rad::debug_memory_alloc_info allocInfo)
-{
-    const auto ptr = RAD_ALLOC_ALIGNED_DEBUG(count,
-        static_cast<std::size_t>(al), allocInfo);
-
-    if (!ptr)
-    {
-        throw std::bad_alloc();
-    }
-
-    return ptr;
-}
-
 void operator delete(void* ptr) noexcept
 {
     RAD_FREE(ptr);
@@ -170,26 +120,78 @@ void operator delete[](void* ptr, std::align_val_t al,
     RAD_FREE_ALIGNED(ptr);
 }
 
-void operator delete(void* ptr, rad::debug_memory_alloc_info allocInfo) noexcept
-{
-    RAD_FREE(ptr);
-}
+#if RAD_USE_DEBUG_MEMORY == 1
+    void* operator new(std::size_t count, rad::debug_memory_alloc_info allocInfo)
+    {
+        const auto ptr = RAD_ALLOC_DEBUG(count, allocInfo);
+        if (!ptr)
+        {
+            throw std::bad_alloc();
+        }
 
-void operator delete[](void* ptr, rad::debug_memory_alloc_info allocInfo) noexcept
-{
-    RAD_FREE(ptr);
-}
+        return ptr;
+    }
 
-void operator delete(void* ptr, std::align_val_t al,
-    rad::debug_memory_alloc_info allocInfo) noexcept
-{
-    RAD_FREE_ALIGNED(ptr);
-}
+    void* operator new[](std::size_t count, rad::debug_memory_alloc_info allocInfo)
+    {
+        const auto ptr = RAD_ALLOC_DEBUG(count, allocInfo);
+        if (!ptr)
+        {
+            throw std::bad_alloc();
+        }
 
-void operator delete[](void* ptr, std::align_val_t al,
-    rad::debug_memory_alloc_info allocInfo) noexcept
-{
-    RAD_FREE_ALIGNED(ptr);
-}
+        return ptr;
+    }
+
+    void* operator new(std::size_t count, std::align_val_t al,
+        rad::debug_memory_alloc_info allocInfo)
+    {
+        const auto ptr = RAD_ALLOC_ALIGNED_DEBUG(count,
+            static_cast<std::size_t>(al), allocInfo);
+
+        if (!ptr)
+        {
+            throw std::bad_alloc();
+        }
+
+        return ptr;
+    }
+
+    void* operator new[](std::size_t count, std::align_val_t al,
+        rad::debug_memory_alloc_info allocInfo)
+    {
+        const auto ptr = RAD_ALLOC_ALIGNED_DEBUG(count,
+            static_cast<std::size_t>(al), allocInfo);
+
+        if (!ptr)
+        {
+            throw std::bad_alloc();
+        }
+
+        return ptr;
+    }
+
+    void operator delete(void* ptr, rad::debug_memory_alloc_info allocInfo) noexcept
+    {
+        RAD_FREE(ptr);
+    }
+
+    void operator delete[](void* ptr, rad::debug_memory_alloc_info allocInfo) noexcept
+    {
+        RAD_FREE(ptr);
+    }
+
+    void operator delete(void* ptr, std::align_val_t al,
+        rad::debug_memory_alloc_info allocInfo) noexcept
+    {
+        RAD_FREE_ALIGNED(ptr);
+    }
+
+    void operator delete[](void* ptr, std::align_val_t al,
+        rad::debug_memory_alloc_info allocInfo) noexcept
+    {
+        RAD_FREE_ALIGNED(ptr);
+    }
+#endif
 
 #endif
