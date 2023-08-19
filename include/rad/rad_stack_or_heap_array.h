@@ -26,6 +26,14 @@ class stack_or_heap_array
     buffer_type_    data_;
     std::size_t     count_ = 0;
 
+    void clear_() noexcept
+    {
+        // Destruct any existing elements and free any existing heap memory.
+        destruct(begin(), end());
+        count_ = 0;
+        data_.deallocate_(); // NOTE: This does NOT reset the data_.data_ pointer!
+    }
+
 public:
     inline std::size_t size() const noexcept
     {
@@ -52,6 +60,29 @@ public:
         return (data_.data<T>() + count_);
     }
 
+    inline void clear() noexcept
+    {
+        clear_();
+        data_.data_ = data_.stackMemory_;
+    }
+
+    template<typename... Args>
+    void assign(std::size_t count, const Args&... args)
+    {
+        // Destruct any existing elements.
+        destruct(begin(), end());
+        count_ = 0;
+
+        // Reallocate memory block, not preserving existing data.
+        data_.reallocate(sizeof(T) * count, false);
+
+        // Direct-construct new elements, and set new count.
+        uninitialized_direct_construct(begin(), end(), args...);
+        count_ = count;
+    }
+
+    // TODO: Add other overloads of assign.
+
     inline const T& operator[](std::size_t index) const
     {
         return *(begin() + index);
@@ -71,10 +102,8 @@ public:
     {
         if (&other != this)
         {
-            // Destruct any existing elements and free any existing heap memory.
-            destruct(begin(), end());
-            count_ = 0;
-            data_.deallocate_();
+            // Reset the array without setting a new data_.data_ pointer.
+            clear_();
 
             // If the other array is using heap memory, just take ownership of its data pointer.
             if (other.data_.is_heap())
@@ -87,6 +116,7 @@ public:
             // and destruct the now-empty elements in the existing array.
             else
             {
+                data_.data_ = data_.stackMemory_;
                 uninitialized_move_strong(other.begin(), other.end(), begin());
                 destruct(other.begin(), other.end());
             }
@@ -107,6 +137,8 @@ public:
     {
         uninitialized_direct_construct(begin(), end(), args...);
     }
+
+    // TODO: Add iterator constructor.
 
     stack_or_heap_array(const stack_or_heap_array& other) :
         data_(sizeof(T) * other.count_),
@@ -133,6 +165,8 @@ public:
         // and destruct the now-empty elements in the existing array.
         else
         {
+            // NOTE: data_.data_ is already set to data_.stackMemory_ here thanks to
+            // stack_or_heap_memory's default constructor.
             uninitialized_move_strong(other.begin(), other.end(), begin());
             destruct(other.begin(), other.end());
         }
