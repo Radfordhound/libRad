@@ -25,14 +25,14 @@ class stack_or_heap_array
         alignof(T)>;
 
     std::size_t     count_ = 0;
-    buffer_type_    data_;
+    buffer_type_    buffer_;
 
     void clear_() noexcept
     {
         // Destruct any existing elements and free any existing heap memory.
         destruct(begin(), end());
         count_ = 0;
-        data_.deallocate_(); // NOTE: This does NOT reset the data_.data_ pointer!
+        buffer_.deallocate_(); // NOTE: This does NOT reset the buffer_.data_ pointer!
     }
 
 public:
@@ -43,28 +43,28 @@ public:
 
     inline const T* begin() const noexcept
     {
-        return data_.data<T>();
+        return buffer_.data<T>();
     }
 
     inline T* begin() noexcept
     {
-        return data_.data<T>();
+        return buffer_.data<T>();
     }
 
     inline const T* end() const noexcept
     {
-        return (data_.data<T>() + count_);
+        return (buffer_.data<T>() + count_);
     }
 
     inline T* end() noexcept
     {
-        return (data_.data<T>() + count_);
+        return (buffer_.data<T>() + count_);
     }
 
     inline void clear() noexcept
     {
         clear_();
-        data_.data_ = data_.stackMemory_;
+        buffer_.data_ = buffer_.stackMemory_;
     }
 
     template<typename... Args>
@@ -75,7 +75,7 @@ public:
         count_ = 0;
 
         // Reallocate memory block, not preserving existing data.
-        data_.reallocate(sizeof(T) * count, false);
+        buffer_.reallocate(sizeof(T) * count, false);
 
         // Direct-construct new elements, and set new count.
         uninitialized_direct_construct(begin(), end(), args...);
@@ -103,21 +103,21 @@ public:
     {
         if (&other != this)
         {
-            // Reset the array without setting a new data_.data_ pointer.
+            // Reset the array without setting a new buffer_.data_ pointer.
             clear_();
 
             // If the other array is using heap memory, just take ownership of its data pointer.
-            if (other.data_.is_heap())
+            if (other.buffer_.is_heap())
             {
-                data_.data = other.data_;
-                other.data_.data_ = other.data_.stackMemory_;
+                buffer_.data_ = other.buffer_.data_;
+                other.buffer_.data_ = other.buffer_.stackMemory_;
             }
 
             // If the other array is using stack memory, move its elements into our stack memory
             // and destruct the now-empty elements in the existing array.
             else
             {
-                data_.data_ = data_.stackMemory_;
+                buffer_.data_ = buffer_.stackMemory_;
                 uninitialized_move_strong(other.begin(), other.end(), begin());
                 destruct(other.begin(), other.end());
             }
@@ -134,7 +134,7 @@ public:
     template<typename... Args>
     stack_or_heap_array(std::size_t count, const Args&... args) :
         count_(count),
-        data_(sizeof(T) * count)
+        buffer_(sizeof(T) * count)
     {
         uninitialized_direct_construct(begin(), end(), args...);
     }
@@ -143,7 +143,7 @@ public:
 
     stack_or_heap_array(const stack_or_heap_array& other) :
         count_(other.count_),
-        data_(sizeof(T) * other.count_)
+        buffer_(sizeof(T) * other.count_)
     {
         std::uninitialized_copy(other.begin(), other.end(), begin());
     }
@@ -156,17 +156,17 @@ public:
         count_(other.count_)
     {
         // If the other array is using heap memory, just take ownership of its data pointer.
-        if (other.data_.is_heap())
+        if (other.buffer_.is_heap())
         {
-            data_.data_ = other.data_.data_;
-            other.data_.data_ = other.data_.stackMemory_;
+            buffer_.data_ = other.buffer_.data_;
+            other.buffer_.data_ = other.buffer_.stackMemory_;
         }
 
         // If the other array is using stack memory, move its elements into our stack memory
         // and destruct the now-empty elements in the existing array.
         else
         {
-            // NOTE: data_.data_ is already set to data_.stackMemory_ here thanks to
+            // NOTE: buffer_.data_ is already set to buffer_.stackMemory_ here thanks to
             // stack_or_heap_memory's default constructor.
             uninitialized_move_strong(other.begin(), other.end(), begin());
             destruct(other.begin(), other.end());
