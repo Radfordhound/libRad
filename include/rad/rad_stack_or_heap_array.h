@@ -16,6 +16,7 @@
 
 namespace rad
 {
+// TODO: Add allocator.
 template<typename T, std::size_t MaxStackCount>
 class stack_or_heap_array
 {
@@ -23,8 +24,8 @@ class stack_or_heap_array
         sizeof(T) * MaxStackCount,
         alignof(T)>;
 
-    buffer_type_    data_;
     std::size_t     count_ = 0;
+    buffer_type_    data_;
 
     void clear_() noexcept
     {
@@ -132,8 +133,8 @@ public:
 
     template<typename... Args>
     stack_or_heap_array(std::size_t count, const Args&... args) :
-        data_(sizeof(T) * count),
-        count_(count)
+        count_(count),
+        data_(sizeof(T) * count)
     {
         uninitialized_direct_construct(begin(), end(), args...);
     }
@@ -141,8 +142,8 @@ public:
     // TODO: Add iterator constructor.
 
     stack_or_heap_array(const stack_or_heap_array& other) :
-        data_(sizeof(T) * other.count_),
-        count_(other.count_)
+        count_(other.count_),
+        data_(sizeof(T) * other.count_)
     {
         std::uninitialized_copy(other.begin(), other.end(), begin());
     }
