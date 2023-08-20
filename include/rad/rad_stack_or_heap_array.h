@@ -78,7 +78,7 @@ public:
         buffer_.reallocate(sizeof(T) * count, false);
 
         // Direct-construct new elements, and set new count.
-        uninitialized_direct_construct(begin(), end(), args...);
+        uninitialized_direct_construct(begin(), begin() + count, args...);
         count_ = count;
     }
 
