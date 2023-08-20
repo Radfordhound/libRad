@@ -9,7 +9,7 @@ if(WIN32)
 endif()
 
 # Setup project
-project(Rad
+project(libRad
     VERSION 1.0.0
     LANGUAGES CXX
 )
@@ -37,6 +37,11 @@ if(WIN32)
         "Force libRad to use the ANSI Win32 API instead of wide-char UNICODE Win32 functions (not recommended)"
         OFF
     )
+endif()
+
+if(CMAKE_SHARED_LIBRARY_PREFIX STREQUAL "lib")
+    # Ensures the output name is "libRad", not "liblibRad"
+    set_target_properties(libRad PROPERTIES OUTPUT_NAME "Rad")
 endif()
 
 # Compiler-specific options
@@ -93,23 +98,23 @@ else()
 endif()
 
 # Setup library
-add_library(Rad ${RAD_INCLUDES} ${RAD_SOURCES})
-add_library(Rad::Rad ALIAS Rad)
+add_library(libRad ${RAD_INCLUDES} ${RAD_SOURCES})
+add_library(libRad::libRad ALIAS libRad)
 
-set_target_properties(Rad PROPERTIES
+set_target_properties(libRad PROPERTIES
     CXX_EXTENSIONS OFF
     CXX_STANDARD 17
     CXX_STANDARD_REQUIRED ON
     ${RAD_USE_DEBUG_POSTFIX}
 )
 
-target_precompile_headers(Rad
+target_precompile_headers(libRad
     PRIVATE ${RAD_PCH_PATH}
  )
 
 # Setup DLL preprocessor definitions
 if(BUILD_SHARED_LIBS)
-    target_compile_definitions(Rad
+    target_compile_definitions(libRad
         PUBLIC RAD_IS_DLL
         PRIVATE RAD_IS_BUILDING_DLL
     )
@@ -118,7 +123,7 @@ endif()
 # Setup platform-specific options
 if(WIN32)
     if(NOT RAD_WIN32_FORCE_ANSI)
-        target_compile_definitions(Rad
+        target_compile_definitions(libRad
             PRIVATE
                 _UNICODE
                 UNICODE
@@ -127,7 +132,7 @@ if(WIN32)
 endif()
 
 # Setup include directories
-target_include_directories(Rad
+target_include_directories(libRad
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${RAD_INCLUDE_DIR}>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
@@ -139,49 +144,49 @@ install(DIRECTORY ${RAD_INCLUDE_DIR}
 )
 
 # Setup CMake package config files
-install(TARGETS Rad
-    EXPORT Rad_Targets
+install(TARGETS libRad
+    EXPORT libRadTargets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
-set(RAD_INSTALL_CONFIGDIR ${CMAKE_INSTALL_LIBDIR}/cmake/Rad)
+set(RAD_INSTALL_CONFIGDIR ${CMAKE_INSTALL_LIBDIR}/cmake/libRad)
 
-install(EXPORT Rad_Targets
-    FILE Rad_Targets.cmake
-    NAMESPACE Rad::
+install(EXPORT libRadTargets
+    FILE libRadTargets.cmake
+    NAMESPACE libRad::
     DESTINATION ${RAD_INSTALL_CONFIGDIR}
 )
 
 write_basic_package_version_file(
-    ${CMAKE_CURRENT_BINARY_DIR}/Rad_ConfigVersion.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/libRadConfigVersion.cmake
     VERSION ${PROJECT_VERSION}
     COMPATIBILITY AnyNewerVersion
 )
 
 configure_package_config_file(
-    ${PROJECT_SOURCE_DIR}/cmake/Rad_Config.cmake.in
-    ${CMAKE_CURRENT_BINARY_DIR}/Rad_Config.cmake
+    ${PROJECT_SOURCE_DIR}/cmake/libRadConfig.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/libRadConfig.cmake
     INSTALL_DESTINATION ${RAD_INSTALL_CONFIGDIR}
 )
 
 install(FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/Rad_Config.cmake
-    ${CMAKE_CURRENT_BINARY_DIR}/Rad_ConfigVersion.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/libRadConfig.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/libRadConfigVersion.cmake
     DESTINATION ${RAD_INSTALL_CONFIGDIR}
 )
 
 # Install license file
 install(FILES
     ${PROJECT_SOURCE_DIR}/LICENSE.txt
-    DESTINATION ${CMAKE_INSTALL_DATADIR}/licenses/Rad
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/licenses/libRad
 )
 
 # Export CMake library
-export(EXPORT Rad_Targets
-    FILE ${CMAKE_CURRENT_BINARY_DIR}/Rad_Targets.cmake
-    NAMESPACE Rad::
+export(EXPORT libRadTargets
+    FILE ${CMAKE_CURRENT_BINARY_DIR}/libRadTargets.cmake
+    NAMESPACE libRad::
 )
 
-export(PACKAGE Rad)
+export(PACKAGE libRad)
