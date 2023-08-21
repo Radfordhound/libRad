@@ -124,7 +124,7 @@ public:
                 {
                     for (; ptr != oldAliveEnd; ++ptr)
                     {
-                        destroy(*ptr);
+                        rad::destruct(*ptr);
                     }
                 }
 
@@ -145,7 +145,7 @@ public:
                     {
                         for (ptr += newCount; ptr != oldAliveEnd; ++ptr)
                         {
-                            destroy(*ptr);
+                            rad::destruct(*ptr);
                         }
                     }
                 }
