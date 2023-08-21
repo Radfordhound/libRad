@@ -46,16 +46,16 @@ libRad adds several (very) helpful object management utilities in `rad_object_ut
 - `rad::uninitialized_move_strong`: Like `std::uninitialized_move`, except with a strong exception guarantee!
 - `rad::move_strong`: Like `std::move` (the one from `<algorithm>`, not the one from `<utility>`), except with a strong exception guarantee!
 
-## Lists
+## Vectors
 
-libRad adds `rad::list`, which is a custom drop-in replacement for `std::vector`
+libRad adds `rad::vector`, which is a custom drop-in replacement for `std::vector`
 that is more efficient and adds extra functionality.
 
-Unlike `std::vector`, `rad::list` internally calls `reallocate` on its allocator,
+Unlike `std::vector`, `rad::vector` internally calls `reallocate` on its allocator,
 which allows it to grow more efficiently than `std::vector`.
 
 It also adds new functionality, such as the `release` function, which releases
-ownership of the list's data buffer to the caller (similar to `std::unique_ptr`'s
+ownership of the vector's data buffer to the caller (similar to `std::unique_ptr`'s
 `release` function). It's up to the user to destruct the elements and free the
 memory using the allocator's deallocate function (or equivalent).
 

@@ -1,15 +1,15 @@
 /**
- * @file rad_list.h
+ * @file rad_vector.h
  * @author Graham Scott
- * @brief Header file providing rad::list.
+ * @brief Header file providing rad::vector.
  * @version 0.1
  * @date 2023-06-14
  * 
  * @copyright Copyright (c) 2023 Graham Scott
  * 
  */
-#ifndef RAD_LIST_H_INCLUDED
-#define RAD_LIST_H_INCLUDED
+#ifndef RAD_VECTOR_H_INCLUDED
+#define RAD_VECTOR_H_INCLUDED
 
 #include "rad_pair.h"
 #include "rad_default_allocator.h"
@@ -22,7 +22,7 @@
 namespace rad
 {
 template<typename T, class Allocator = default_allocator<T>>
-class list
+class vector
 {
     using allocator_traits_ = allocator_traits<Allocator>;
     using size_type_        = typename allocator_traits_::size_type;
@@ -238,14 +238,14 @@ public:
 
     /**
      * @brief Releases ownership of the data buffer
-     * to the caller and resets the list.
+     * to the caller and resets the vector.
      * 
      * After calling this function, it is the caller's
      * responsibility to destruct the elements within the
      * data buffer if necessary and to deallocate the memory
      * using the allocator's deallocate function or equivalent.
      * 
-     * @return pointer A pointer to the data buffer, no longer owned by the list.
+     * @return pointer A pointer to the data buffer, no longer owned by the vector.
      */
     pointer release() noexcept
     {
@@ -254,10 +254,10 @@ public:
         return dataBuf;
     }
 
-    list& operator=(const list& other) = delete;
+    vector& operator=(const vector& other) = delete;
 
     // TODO: Handle propagate_on_container_move_assignment properly!!!
-    list& operator=(list&& other) noexcept
+    vector& operator=(vector&& other) noexcept
     {
         if (&other != this)
         {
@@ -270,17 +270,17 @@ public:
         return *this;
     }
 
-    list() noexcept = default;
+    vector() noexcept = default;
 
-    list(const list& other) = delete; // TODO
+    vector(const vector& other) = delete; // TODO
 
-    list(list&& other) noexcept :
+    vector(vector&& other) noexcept :
         data_(std::move(other.data_))
     {
         other.data_.second().reset();
     }
 
-    inline ~list()
+    inline ~vector()
     {
         destroy_data_();
     }
