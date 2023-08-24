@@ -41,6 +41,16 @@ public:
         return count_;
     }
 
+    inline const T* data() const noexcept
+    {
+        return buffer_.data<T>();
+    }
+
+    inline T* data() noexcept
+    {
+        return buffer_.data<T>();
+    }
+
     inline const T* begin() const noexcept
     {
         return buffer_.data<T>();
