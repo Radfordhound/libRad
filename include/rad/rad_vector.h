@@ -139,6 +139,11 @@ public:
         );
     }
 
+    [[nodiscard]] inline bool empty() const noexcept
+    {
+        return (begin() == end());
+    }
+
     inline const_iterator cbegin() const noexcept
     {
         return data_.second().dataBegin;
