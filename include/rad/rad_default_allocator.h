@@ -122,10 +122,7 @@ public:
                 // Destroy the old (now moved) alive elements.
                 if constexpr (!std::is_trivially_destructible_v<value_type>)
                 {
-                    for (; ptr != oldAliveEnd; ++ptr)
-                    {
-                        rad::destruct(*ptr);
-                    }
+                    rad::destruct(ptr, oldAliveEnd);
                 }
 
                 // Deallocate existing memory.
@@ -138,20 +135,16 @@ public:
             else
             {
                 // Destruct any extra alive elements at the end of the existing memory block.
-                const auto oldMemory = ptr;
                 if constexpr (!std::is_trivially_destructible_v<value_type>)
                 {
                     if (newCount < oldAliveCount)
                     {
-                        for (ptr += newCount; ptr != oldAliveEnd; ++ptr)
-                        {
-                            rad::destruct(*ptr);
-                        }
+                        rad::destruct(ptr + newCount, oldAliveEnd);
                     }
                 }
 
                 // Return the existing memory block.
-                return oldMemory;
+                return ptr;
             }
         }
 
