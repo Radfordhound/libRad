@@ -241,6 +241,12 @@ public:
 
     // TODO: Range erase
 
+    void clear() noexcept
+    {
+        destroy_data_();
+        data_.second().reset();
+    }
+
     /**
      * @brief Releases ownership of the data buffer
      * to the caller and resets the vector.
