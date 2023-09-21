@@ -39,20 +39,6 @@ if(WIN32)
     )
 endif()
 
-if(CMAKE_SHARED_LIBRARY_PREFIX STREQUAL "lib")
-    # Ensures the output name is "libRad", not "liblibRad"
-    set_target_properties(libRad PROPERTIES OUTPUT_NAME "Rad")
-endif()
-
-# Compiler-specific options
-if(MSVC)
-    # Disable annoying MSVC unsafe string warnings
-    add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
-
-    # Enable strict conformance mode in MSVC
-    add_compile_options(/permissive-)
-endif()
-
 # Make CMake output all libraries and runtimes to top-level binary directory
 # (This is so .dlls will be in same folder as .exes on Windows if building shared libraries)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
@@ -120,7 +106,7 @@ if(BUILD_SHARED_LIBS)
     )
 endif()
 
-# Setup platform-specific options
+# Setup platform-specific settings
 if(WIN32)
     if(NOT RAD_WIN32_FORCE_ANSI)
         target_compile_definitions(libRad
@@ -129,7 +115,20 @@ if(WIN32)
                 UNICODE
         )
     endif()
+elseif(CMAKE_SHARED_LIBRARY_PREFIX STREQUAL "lib")
+    # Ensures the output name is "libRad", not "liblibRad"
+    set_target_properties(libRad PROPERTIES OUTPUT_NAME "Rad")
 endif()
+
+# Compiler-specific settings
+if(MSVC)
+    # Disable annoying MSVC unsafe string warnings
+    add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
+
+    # Enable strict conformance mode in MSVC
+    add_compile_options(/permissive-)
+endif()
+
 
 # Setup include directories
 target_include_directories(libRad
