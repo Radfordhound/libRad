@@ -43,32 +43,32 @@ public:
 
     inline const T* data() const noexcept
     {
-        return buffer_.data<T>();
+        return buffer_.template data<T>();
     }
 
     inline T* data() noexcept
     {
-        return buffer_.data<T>();
+        return buffer_.template data<T>();
     }
 
     inline const T* begin() const noexcept
     {
-        return buffer_.data<T>();
+        return buffer_.template data<T>();
     }
 
     inline T* begin() noexcept
     {
-        return buffer_.data<T>();
+        return buffer_.template data<T>();
     }
 
     inline const T* end() const noexcept
     {
-        return (buffer_.data<T>() + count_);
+        return (buffer_.template data<T>() + count_);
     }
 
     inline T* end() noexcept
     {
-        return (buffer_.data<T>() + count_);
+        return (buffer_.template data<T>() + count_);
     }
 
     inline void clear() noexcept

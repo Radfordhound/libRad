@@ -25,7 +25,7 @@ class stack_or_heap_memory
     friend class stack_or_heap_array;
 
     void* data_;
-    unsigned char alignas(Alignment) stackMemory_[Size];
+    alignas(Alignment) unsigned char stackMemory_[Size];
 
     void allocate_(std::size_t size)
     {
