@@ -31,7 +31,7 @@ constexpr bool is_aligned(std::uintptr_t address, std::size_t alignment) noexcep
     return ((address % alignment) == 0);
 }
 
-constexpr bool is_aligned(const void* ptr, std::size_t alignment) noexcept
+inline bool is_aligned(const void* ptr, std::size_t alignment) noexcept
 {
     return is_aligned(reinterpret_cast<std::uintptr_t>(ptr), alignment);
 }
@@ -124,10 +124,10 @@ RAD_API void free_aligned_(void* ptr) noexcept;
     #define RAD_FREE_ALIGNED(ptr) ::rad::detail_::free_aligned_debug_(ptr)
 
     #define RAD_NEW_DEBUG(type, allocInfo, ...)\
-        new ((allocInfo), __VA_ARGS__) type
+        new ((allocInfo), ## __VA_ARGS__) type
 
     #define RAD_NEW(type, ...) RAD_NEW_DEBUG(type,\
-        RAD_GET_DEBUG_MEMORY_ALLOC_INFO(), __VA_ARGS__)
+        RAD_GET_DEBUG_MEMORY_ALLOC_INFO(), ## __VA_ARGS__)
 #else
     #define RAD_GET_DEBUG_MEMORY_ALLOC_INFO()
 
@@ -266,10 +266,10 @@ RAD_API void free_aligned_(void* ptr) noexcept;
         // avoid compiler warnings that we didn't provide enough arguments.
 
     #define RAD_NEW_DEBUG(type, allocInfo, ...) RAD_NEW_DEBUG_IMPL_HELPER4_(\
-        RAD_NEW_DEBUG_IMPL_HELPER1_(__VA_ARGS__), new (__VA_ARGS__), dummy_) (type)
+        RAD_NEW_DEBUG_IMPL_HELPER1_(__VA_ARGS__), new (__VA_ARGS__), dummy_) type
 
     #define RAD_NEW(type, ...) RAD_NEW_DEBUG(type,\
-        dummy_, __VA_ARGS__)
+        dummy_, ## __VA_ARGS__)
 #endif
 } // rad
 
