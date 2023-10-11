@@ -311,12 +311,19 @@ public:
         return *this;
     }
 
-    constexpr vector() noexcept
+    constexpr vector()
+        noexcept(std::is_nothrow_default_constructible_v<Allocator>)
     {
         values_().reset();
     }
 
-    vector(std::size_t count, const T& val,
+    constexpr explicit vector(const Allocator& allocator)
+        noexcept(std::is_nothrow_copy_constructible_v<Allocator>)
+        : data_(allocator, {})
+    {
+    }
+
+    vector(size_type count, const T& val,
         const Allocator& allocator = Allocator())
         : data_(allocator, {})
     {
@@ -330,6 +337,28 @@ public:
         try
         {
             std::uninitialized_fill(v.dataBegin, v.dataEnd, val);
+        }
+        catch (...)
+        {
+            allocator_traits_::deallocate(allocator_(), v.dataBegin, count);
+            throw;
+        }
+    }
+
+    explicit vector(size_type count,
+        const Allocator& allocator = Allocator())
+        : data_(allocator, {})
+    {
+        // Allocate memory.
+        auto& v = values_();
+
+        v.dataBegin = allocator_traits_::allocate(allocator_(), count);
+        v.bufEnd = v.dataEnd = (v.dataBegin + count);
+
+        // Default-construct values.
+        try
+        {
+            std::uninitialized_default_construct(v.dataBegin, v.dataEnd);
         }
         catch (...)
         {
