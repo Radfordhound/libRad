@@ -295,6 +295,16 @@ public:
         return dataBuf;
     }
 
+    inline const_reference operator[](size_type pos) const noexcept
+    {
+        return data()[pos];
+    }
+
+    inline reference operator[](size_type pos) noexcept
+    {
+        return data()[pos];
+    }
+
     vector& operator=(const vector& other) = delete;
 
     // TODO: Handle propagate_on_container_move_assignment properly!!!
