@@ -54,13 +54,14 @@ set(RAD_INCLUDES
     "${RAD_INCLUDE_DIR}/rad_base.h"
     "${RAD_INCLUDE_DIR}/rad_default_allocator.h"
     "${RAD_INCLUDE_DIR}/rad_defer.h"
-    "${RAD_INCLUDE_DIR}/rad_vector.h"
+    "${RAD_INCLUDE_DIR}/rad_memory_pool.h"
     "${RAD_INCLUDE_DIR}/rad_memory.h"
     "${RAD_INCLUDE_DIR}/rad_object_utils.h"
     "${RAD_INCLUDE_DIR}/rad_pair.h"
     "${RAD_INCLUDE_DIR}/rad_scoped_enum_helpers.h"
     "${RAD_INCLUDE_DIR}/rad_stack_or_heap_array.h"
     "${RAD_INCLUDE_DIR}/rad_stack_or_heap_memory.h"
+    "${RAD_INCLUDE_DIR}/rad_vector.h"
 )
 
 # Set sources

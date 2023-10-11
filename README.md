@@ -28,6 +28,35 @@ to delete allocations created with `RAD_NEW`.
 It also provides `rad::is_aligned`, which allows you to conviniently check if a pointer
 or address is aligned to a given alignment.
 
+#### Memory pools
+
+libRad adds memory pools in `rad_memory_pool.h`. There are two template
+classes: `rad::fixed_memory_pool` and `rad::dynamic_memory_pool`.
+
+Each of these classes are constructed with a count specifying the maximum
+number of objects of type T that can be suballocated from within each memory block.
+
+The memory is allocated only once upfront. Each allocate call suballocates
+enough memory for an object of type T and returns a pointer to the suballocated memory.
+
+**The implementation essentially boils down to a pointer swap; it is extremely efficient!**
+
+The difference between the two types is that, in `rad::fixed_memory_pool`,
+there is only one memory block which is allocated upfront at construction time.
+The object count specified in the constructor is a hard limit; you cannot
+allocate more objects than this.
+
+In `rad::dynamic_memory_pool`, there are multiple memory blocks. One memory block
+is allocated upfront at construction time. Additional memory blocks are allocated
+as needed. Therefore, unlike `rad::fixed_memory_pool`, you *may* allocate more
+objects than the value specified at construction time; this value simply specifies
+how many objects can be suballocated from within each new block, before
+a new memory block will have to be allocated.
+
+**You can use these classes for extremely cheap cache-coherent allocations/deallocations,
+like a vector, except even cheaper in many cases, with absolutely no memory reorganization
+happening to existing objects whenever you allocate/free!**
+
 #### Custom allocators
 
 All libRad containers which allocate memory also support (or will soon support) custom
@@ -172,8 +201,6 @@ int main(int argc, char* argv[])
     
     // Even if an exception is thrown, the defer statements will be called!
     throw std::runtime_error("uh oh!");
-
-    return EXIT_SUCCESS;
 }
 ```
 
