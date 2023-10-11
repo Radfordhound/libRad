@@ -32,26 +32,26 @@ namespace detail_
     template<typename T>
     class memory_pool_block
     {
-        std::unique_ptr<memory_pool_element<T>[]>   elements_;
+        std::unique_ptr<unsigned char[]>    elements_;
 
     public:
         inline memory_pool_element<T>* data() const noexcept
         {
-            return elements_.get();
+            return reinterpret_cast<memory_pool_element<T>*>(elements_.get());
         }
 
         memory_pool_block() noexcept = default;
 
         memory_pool_block(std::size_t elementCount)
-            : elements_(RAD_NEW(memory_pool_element<T>)[elementCount])
+            : elements_(RAD_NEW(unsigned char)[sizeof(memory_pool_element<T>) * elementCount])
         {
             // Validate arguments.
             assert((elementCount > 0) &&
                 "elementCount must be non-zero");
 
             // Initialize all elements.
-            auto element = elements_.get();
-            const auto lastElement = (elements_.get() + (elementCount - 1));
+            auto element = data();
+            const auto lastElement = (element + (elementCount - 1));
 
             while (element != lastElement)
             {
