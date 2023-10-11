@@ -333,9 +333,8 @@ public:
     {
     }
 
-    vector(size_type count, const T& val,
-        const Allocator& allocator = Allocator())
-        : data_(allocator, {})
+    template<typename... Args>
+    vector(size_type count, const Args&... args)
     {
         // Allocate memory.
         auto& v = values_();
@@ -343,10 +342,10 @@ public:
         v.dataBegin = allocator_traits_::allocate(allocator_(), count);
         v.bufEnd = v.dataEnd = (v.dataBegin + count);
 
-        // Fill-construct values.
+        // Direct-construct values.
         try
         {
-            std::uninitialized_fill(v.dataBegin, v.dataEnd, val);
+            uninitialized_direct_construct(v.dataBegin, v.dataEnd, args...);
         }
         catch (...)
         {
@@ -355,8 +354,9 @@ public:
         }
     }
 
-    explicit vector(size_type count,
-        const Allocator& allocator = Allocator())
+    template<typename... Args>
+    explicit vector(const Allocator& allocator,
+        size_type count, const Args&... args)
         : data_(allocator, {})
     {
         // Allocate memory.
@@ -365,10 +365,10 @@ public:
         v.dataBegin = allocator_traits_::allocate(allocator_(), count);
         v.bufEnd = v.dataEnd = (v.dataBegin + count);
 
-        // Default-construct values.
+        // Direct-construct values.
         try
         {
-            std::uninitialized_default_construct(v.dataBegin, v.dataEnd);
+            uninitialized_direct_construct(v.dataBegin, v.dataEnd, args...);
         }
         catch (...)
         {
