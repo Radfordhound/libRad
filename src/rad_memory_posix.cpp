@@ -12,7 +12,7 @@
 #include <cstdlib>
 #include <malloc.h>
 
-namespace rad
+namespace rad::detail_
 {
 // TODO
-} // rad
+}

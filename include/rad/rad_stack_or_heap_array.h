@@ -142,18 +142,18 @@ public:
     stack_or_heap_array() noexcept = default;
 
     template<typename... Args>
-    stack_or_heap_array(std::size_t count, const Args&... args) :
-        count_(count),
-        buffer_(sizeof(T) * count)
+    stack_or_heap_array(std::size_t count, const Args&... args)
+        : count_(count)
+        , buffer_(sizeof(T) * count)
     {
         uninitialized_direct_construct(begin(), end(), args...);
     }
 
     // TODO: Add iterator constructor.
 
-    stack_or_heap_array(const stack_or_heap_array& other) :
-        count_(other.count_),
-        buffer_(sizeof(T) * other.count_)
+    stack_or_heap_array(const stack_or_heap_array& other)
+        : count_(other.count_)
+        , buffer_(sizeof(T) * other.count_)
     {
         std::uninitialized_copy(other.begin(), other.end(), begin());
     }
@@ -161,9 +161,9 @@ public:
     stack_or_heap_array(stack_or_heap_array&& other)
         noexcept(noexcept(uninitialized_move_strong(
             std::declval<T*>(), std::declval<T*>(),
-            std::declval<T*>()))) :
+            std::declval<T*>())))
 
-        count_(other.count_)
+        : count_(other.count_)
     {
         // If the other array is using heap memory, just take ownership of its data pointer.
         if (other.buffer_.is_heap())
@@ -190,6 +190,6 @@ public:
         destruct(begin(), end());
     }
 };
-} // rad
+}
 
 #endif

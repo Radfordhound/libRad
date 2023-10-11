@@ -38,20 +38,20 @@ inline bool is_aligned(const void* ptr, std::size_t alignment) noexcept
 
 namespace detail_
 {
-RAD_API [[nodiscard]] void* allocate_(std::size_t size) noexcept;
+    RAD_API [[nodiscard]] void* allocate_(std::size_t size) noexcept;
 
-RAD_API [[nodiscard]] void* reallocate_(void* ptr, std::size_t size) noexcept;
+    RAD_API [[nodiscard]] void* reallocate_(void* ptr, std::size_t size) noexcept;
 
-RAD_API void free_(void* ptr) noexcept;
+    RAD_API void free_(void* ptr) noexcept;
 
-RAD_API [[nodiscard]] void* allocate_aligned_(
-    std::size_t size, std::size_t alignment) noexcept;
+    RAD_API [[nodiscard]] void* allocate_aligned_(
+        std::size_t size, std::size_t alignment) noexcept;
 
-RAD_API [[nodiscard]] void* reallocate_aligned_(
-    void* ptr, std::size_t size, std::size_t alignment) noexcept;
+    RAD_API [[nodiscard]] void* reallocate_aligned_(
+        void* ptr, std::size_t size, std::size_t alignment) noexcept;
 
-RAD_API void free_aligned_(void* ptr) noexcept;
-} // detail_
+    RAD_API void free_aligned_(void* ptr) noexcept;
+}
 
 #if RAD_USE_DEBUG_MEMORY == 1
     struct debug_memory_alloc_info
@@ -60,9 +60,11 @@ RAD_API void free_aligned_(void* ptr) noexcept;
         unsigned int lineNumber;
 
         constexpr debug_memory_alloc_info(
-            const char* filePath, unsigned int lineNumber) noexcept :
-            filePath(filePath),
-            lineNumber(lineNumber) {}
+            const char* filePath, unsigned int lineNumber) noexcept
+            : filePath(filePath)
+            , lineNumber(lineNumber)
+        {
+        }
     };
 
     namespace detail_
@@ -85,7 +87,7 @@ RAD_API void free_aligned_(void* ptr) noexcept;
             debug_memory_alloc_info allocInfo) noexcept;
 
         RAD_API void free_aligned_debug_(void* ptr) noexcept;
-    } // detail_
+    }
 
     #define RAD_GET_DEBUG_MEMORY_ALLOC_INFO()\
         ::rad::debug_memory_alloc_info(__FILE__, __LINE__)
@@ -271,7 +273,7 @@ RAD_API void free_aligned_(void* ptr) noexcept;
     #define RAD_NEW(type, ...) RAD_NEW_DEBUG(type,\
         dummy_, ## __VA_ARGS__)
 #endif
-} // rad
+}
 
 #if RAD_USE_OPERATOR_NEW_DELETE_REPLACEMENTS == 1 && RAD_USE_DEBUG_MEMORY == 1
     void* operator new(std::size_t count, rad::debug_memory_alloc_info allocInfo);

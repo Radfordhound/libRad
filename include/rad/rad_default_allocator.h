@@ -34,7 +34,9 @@ public:
     constexpr default_allocator() noexcept = default;
 
     template<typename U>
-    constexpr default_allocator(const default_allocator<U>& other) noexcept {}
+    constexpr default_allocator(const default_allocator<U>& other) noexcept
+    {
+    }
 
     [[nodiscard]] static inline T* allocate(std::size_t count
         RAD_IF_DEBUG_MEMORY(, debug_memory_alloc_info allocInfo))
@@ -198,6 +200,6 @@ constexpr bool operator!=(const default_allocator<T>&, const default_allocator<U
 {
     return false;
 }
-} // rad
+}
 
 #endif

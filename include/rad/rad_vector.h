@@ -285,8 +285,8 @@ public:
 
     vector(const vector& other) = delete; // TODO
 
-    vector(vector&& other) noexcept :
-        data_(std::move(other.data_))
+    vector(vector&& other) noexcept
+        : data_(std::move(other.data_))
     {
         other.data_.second().reset();
     }
@@ -296,6 +296,6 @@ public:
         destroy_data_();
     }
 };
-} // rad
+}
 
 #endif

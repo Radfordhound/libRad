@@ -17,140 +17,148 @@ namespace rad
 {
 namespace detail_
 {
-template<typename T1, typename T2>
-constexpr bool is_default_constructible_v = (
-    std::is_default_constructible_v<T1> &&
-    std::is_default_constructible_v<T2>);
+    template<typename T1, typename T2>
+    constexpr bool is_default_constructible_v = (
+        std::is_default_constructible_v<T1> &&
+        std::is_default_constructible_v<T2>);
 
-template<typename T1, typename T2>
-constexpr bool is_nothrow_default_constructible_v = (
-    std::is_nothrow_default_constructible_v<T1> &&
-    std::is_nothrow_default_constructible_v<T2>);
+    template<typename T1, typename T2>
+    constexpr bool is_nothrow_default_constructible_v = (
+        std::is_nothrow_default_constructible_v<T1> &&
+        std::is_nothrow_default_constructible_v<T2>);
 
-template<typename T1, typename T2,
-    bool HasT1 = !std::is_empty_v<T1> && !std::is_final_v<T1>,
-    bool HasT2 = !std::is_empty_v<T1> && !std::is_final_v<T1>>
-class compressed_pair final
-{
-    T1 first_;
-    T2 second_;
-
-public:
-    constexpr const T1& first() const noexcept
+    template<typename T1, typename T2,
+        bool HasT1 = !std::is_empty_v<T1> && !std::is_final_v<T1>,
+        bool HasT2 = !std::is_empty_v<T1> && !std::is_final_v<T1>>
+    class compressed_pair final
     {
-        return first_;
-    }
+        T1 first_;
+        T2 second_;
 
-    constexpr const T2& second() const noexcept
+    public:
+        constexpr const T1& first() const noexcept
+        {
+            return first_;
+        }
+
+        constexpr const T2& second() const noexcept
+        {
+            return second_;
+        }
+
+        constexpr T1& first() noexcept
+        {
+            return first_;
+        }
+
+        constexpr T2& second() noexcept
+        {
+            return second_;
+        }
+
+        template<std::enable_if_t<is_default_constructible_v<T1, T2>, int> = 0>
+        constexpr compressed_pair() noexcept(
+            is_nothrow_default_constructible_v<T1, T2>)
+        {
+        }
+    };
+
+    template<typename T1, typename T2>
+    class compressed_pair<T1, T2, false, true> final : private T1
     {
-        return second_;
-    }
+        T2 second_;
 
-    constexpr T1& first() noexcept
+    public:
+        constexpr const T1& first() const noexcept
+        {
+            return *this;
+        }
+
+        constexpr const T2& second() const noexcept
+        {
+            return second_;
+        }
+
+        constexpr T1& first() noexcept
+        {
+            return *this;
+        }
+
+        constexpr T2& second() noexcept
+        {
+            return second_;
+        }
+
+        template<std::enable_if_t<is_default_constructible_v<T1, T2>, int> = 0>
+        constexpr compressed_pair() noexcept(
+            is_nothrow_default_constructible_v<T1, T2>)
+        {
+        }
+    };
+
+    template<typename T1, typename T2>
+    class compressed_pair<T1, T2, true, false> final : private T2
     {
-        return first_;
-    }
+        T1 first_;
 
-    constexpr T2& second() noexcept
+    public:
+        constexpr const T1& first() const noexcept
+        {
+            return first_;
+        }
+
+        constexpr const T2& second() const noexcept
+        {
+            return *this;
+        }
+
+        constexpr T1& first() noexcept
+        {
+            return first_;
+        }
+
+        constexpr T2& second() noexcept
+        {
+            return *this;
+        }
+
+        template<std::enable_if_t<is_default_constructible_v<T1, T2>, int> = 0>
+        constexpr compressed_pair() noexcept(
+            is_nothrow_default_constructible_v<T1, T2>)
+        {
+        }
+    };
+
+    template<typename T1, typename T2>
+    class compressed_pair<T1, T2, false, false> final : private T1, private T2
     {
-        return second_;
-    }
+    public:
+        constexpr const T1& first() const noexcept
+        {
+            return *this;
+        }
 
-    template<std::enable_if_t<is_default_constructible_v<T1, T2>, int> = 0>
-    constexpr compressed_pair() noexcept(
-        is_nothrow_default_constructible_v<T1, T2>) {}
-};
+        constexpr const T2& second() const noexcept
+        {
+            return *this;
+        }
 
-template<typename T1, typename T2>
-class compressed_pair<T1, T2, false, true> final : private T1
-{
-    T2 second_;
+        constexpr T1& first() noexcept
+        {
+            return *this;
+        }
 
-public:
-    constexpr const T1& first() const noexcept
-    {
-        return *this;
-    }
+        constexpr T2& second() noexcept
+        {
+            return *this;
+        }
 
-    constexpr const T2& second() const noexcept
-    {
-        return second_;
-    }
-
-    constexpr T1& first() noexcept
-    {
-        return *this;
-    }
-
-    constexpr T2& second() noexcept
-    {
-        return second_;
-    }
-
-    template<std::enable_if_t<is_default_constructible_v<T1, T2>, int> = 0>
-    constexpr compressed_pair() noexcept(
-        is_nothrow_default_constructible_v<T1, T2>) {}
-};
-
-template<typename T1, typename T2>
-class compressed_pair<T1, T2, true, false> final : private T2
-{
-    T1 first_;
-
-public:
-    constexpr const T1& first() const noexcept
-    {
-        return first_;
-    }
-
-    constexpr const T2& second() const noexcept
-    {
-        return *this;
-    }
-
-    constexpr T1& first() noexcept
-    {
-        return first_;
-    }
-
-    constexpr T2& second() noexcept
-    {
-        return *this;
-    }
-
-    template<std::enable_if_t<is_default_constructible_v<T1, T2>, int> = 0>
-    constexpr compressed_pair() noexcept(
-        is_nothrow_default_constructible_v<T1, T2>) {}
-};
-
-template<typename T1, typename T2>
-class compressed_pair<T1, T2, false, false> final : private T1, private T2
-{
-public:
-    constexpr const T1& first() const noexcept
-    {
-        return *this;
-    }
-
-    constexpr const T2& second() const noexcept
-    {
-        return *this;
-    }
-
-    constexpr T1& first() noexcept
-    {
-        return *this;
-    }
-
-    constexpr T2& second() noexcept
-    {
-        return *this;
-    }
-
-    template<std::enable_if_t<is_default_constructible_v<T1, T2>, int> = 0>
-    constexpr compressed_pair() noexcept(
-        is_nothrow_default_constructible_v<T1, T2>) {}
-};
+        template<std::enable_if_t<is_default_constructible_v<T1, T2>, int> = 0>
+        constexpr compressed_pair() noexcept(
+            is_nothrow_default_constructible_v<T1, T2>)
+        {
+        }
+    };
 } // detail_
 
 template<typename T1, typename T2>
@@ -185,11 +193,13 @@ public:
     // TODO
 
     template<std::enable_if_t<detail_::is_default_constructible_v<T1, T2>, int> = 0>
-    constexpr pair() noexcept(detail_::is_nothrow_default_constructible_v<T1, T2>) {}
+    constexpr pair() noexcept(detail_::is_nothrow_default_constructible_v<T1, T2>)
+    {
+    }
 
     //template<std::enable_if_t<detail::is_copy_constructible_v<T1, T2>, int> = 0>
     //constexpr explicit()
 };
-} // rad
+}
 
 #endif

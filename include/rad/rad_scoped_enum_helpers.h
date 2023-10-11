@@ -17,28 +17,30 @@ namespace rad
 {
 namespace detail_
 {
-template<typename ScopedEnumType>
-class scoped_enum_bitwise_val
-{
-    const ScopedEnumType    value_{};
-
-public:
-    constexpr operator ScopedEnumType() const noexcept
+    template<typename ScopedEnumType>
+    class scoped_enum_bitwise_val
     {
-        return value_;
-    }
+        const ScopedEnumType    value_{};
 
-    constexpr explicit operator bool() const noexcept
-    {
-        using underlying_type_ = std::underlying_type_t<ScopedEnumType>;
+    public:
+        constexpr operator ScopedEnumType() const noexcept
+        {
+            return value_;
+        }
 
-        return (static_cast<underlying_type_>(value_) != underlying_type_(0));
-    }
+        constexpr explicit operator bool() const noexcept
+        {
+            using underlying_type_ = std::underlying_type_t<ScopedEnumType>;
 
-    constexpr scoped_enum_bitwise_val(ScopedEnumType value = ScopedEnumType{}) noexcept :
-        value_(value) {}
-};
-} // detail_
+            return (static_cast<underlying_type_>(value_) != underlying_type_(0));
+        }
+
+        constexpr scoped_enum_bitwise_val(ScopedEnumType value = ScopedEnumType{}) noexcept
+            : value_(value)
+        {
+        }
+    };
+}
 
 #define RAD_ENABLE_SCOPED_ENUM_BITWISE_OPS(scopedEnumType)\
     constexpr ::rad::detail_::scoped_enum_bitwise_val<scopedEnumType> operator&(\
@@ -106,6 +108,6 @@ public:
     {\
         return ((a = (a << b)));\
     }
-} // rad
+}
 
 #endif

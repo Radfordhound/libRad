@@ -19,115 +19,115 @@ namespace rad
 {
 namespace detail_
 {
-/**
- * @brief Return an rvalue reference to x if To can be nothrow
- * constructed from From&& or if To can be constructed from const From&.
- * Otherwise, returns a constant lvalue reference to x.
- * 
- * Usage: `::new (&a) TypeOfA(move_if_noexcept_construct_<TypeOfA>(b));`
- * 
- * @tparam To The type to check against to see if it can be nothrow-constructed from x.
- * @tparam From The type of x.
- * @param x The value to obtain an rvalue or lvalue reference to.
- * @return An rvalue reference to x if To can be nothrow constructed
- * from From&& or if To can be constructed from const From&. Otherwise, a
- * constant lvalue reference to x.
- */
-template<typename To, typename From>
-[[nodiscard]] constexpr std::conditional_t<
-    !std::is_nothrow_constructible_v<To, std::add_rvalue_reference_t<From>> &&
-    std::is_constructible_v<To, std::add_lvalue_reference_t<std::add_const_t<From>>>,
-    const From&, From&&>
-    move_if_noexcept_construct_(From& x) noexcept
-{
-    return std::move(x);
+    /**
+     * @brief Return an rvalue reference to x if To can be nothrow
+     * constructed from From&& or if To can be constructed from const From&.
+     * Otherwise, returns a constant lvalue reference to x.
+     * 
+     * Usage: `::new (&a) TypeOfA(move_if_noexcept_construct_<TypeOfA>(b));`
+     * 
+     * @tparam To The type to check against to see if it can be nothrow-constructed from x.
+     * @tparam From The type of x.
+     * @param x The value to obtain an rvalue or lvalue reference to.
+     * @return An rvalue reference to x if To can be nothrow constructed
+     * from From&& or if To can be constructed from const From&. Otherwise, a
+     * constant lvalue reference to x.
+     */
+    template<typename To, typename From>
+    [[nodiscard]] constexpr std::conditional_t<
+        !std::is_nothrow_constructible_v<To, std::add_rvalue_reference_t<From>> &&
+        std::is_constructible_v<To, std::add_lvalue_reference_t<std::add_const_t<From>>>,
+        const From&, From&&>
+        move_if_noexcept_construct_(From& x) noexcept
+    {
+        return std::move(x);
+    }
+
+    /**
+     * @brief Return an rvalue reference to x if From&& is nothrow
+     * assignable to To& or if const From& is not assignable to To&.
+     * Otherwise, returns a constant lvalue reference to x.
+     * 
+     * Usage: `a = move_if_noexcept_assign_<TypeOfA>(b);`
+     * 
+     * @tparam To The type to check against to see if it can be nothrow assigned from x.
+     * @tparam From The type of x.
+     * @param x The value to obtain an rvalue or lvalue reference to.
+     * @return An rvalue reference to x if From&& is nothrow assignable to
+     * To& or if const From& is not assignable to To&. Otherwise, a constant
+     * lvalue reference to x.
+     */
+    template<typename To, typename From>
+    [[nodiscard]] constexpr std::conditional_t<
+        !std::is_nothrow_assignable_v<
+            std::add_lvalue_reference_t<To>,
+            std::add_rvalue_reference_t<From>> &&
+
+        std::is_assignable_v<
+            std::add_lvalue_reference_t<To>,
+            std::add_lvalue_reference_t<std::add_const_t<From>>>,
+
+        const From&, From&&>
+        move_if_noexcept_assign_(From& x) noexcept
+    {
+        return std::move(x);
+    }
+
+    template<typename InputIt, typename OutputIt = InputIt>
+    struct is_nothrow_uninitialized_movable_ : std::bool_constant<
+        // Can we nothrow-construct OutputIt::value_type from InputIt::value_type&& ?
+        // (nothrow move-construct)
+        std::is_nothrow_constructible_v<
+            typename std::iterator_traits<OutputIt>::value_type,
+            std::add_rvalue_reference_t<
+                typename std::iterator_traits<InputIt>::value_type>> ||
+
+        // Can we nothrow-construct OutputIt::value_type from const InputIt::value_type& ?
+        // (nothrow copy-construct)
+        std::is_nothrow_constructible_v<
+            typename std::iterator_traits<OutputIt>::value_type,
+            std::add_lvalue_reference_t<std::add_const_t<
+                typename std::iterator_traits<InputIt>::value_type>>>> {};
+
+    template<typename InputIt, typename OutputIt = InputIt>
+    inline constexpr bool is_nothrow_uninitialized_movable_v_ =
+        is_nothrow_uninitialized_movable_<InputIt, OutputIt>::value;
+
+    template<typename InputIt, typename OutputIt = InputIt>
+    struct is_nothrow_movable_ : std::bool_constant<
+        // Can we nothrow-assign InputIt::value_type&& to OutputIt::value_type& ?
+        // (nothrow move-assign)
+        std::is_nothrow_assignable_v<
+            std::add_lvalue_reference_t<
+                typename std::iterator_traits<OutputIt>::value_type>,
+            std::add_rvalue_reference_t<
+                typename std::iterator_traits<InputIt>::value_type>> ||
+
+        // Or can we nothrow-assign const InputIt::value_type& to OutputIt::value_type& ?
+        // (nothrow copy-assign)
+        std::is_nothrow_assignable_v<
+            std::add_lvalue_reference_t<
+                typename std::iterator_traits<OutputIt>::value_type>,
+            std::add_lvalue_reference_t<std::add_const_t<
+                typename std::iterator_traits<InputIt>::value_type>>>> {};
+
+    template<typename InputIt, typename OutputIt = InputIt>
+    inline constexpr bool is_nothrow_movable_v_ =
+        is_nothrow_movable_<InputIt, OutputIt>::value;
+
+    template<typename InputIt, typename OutputIt = InputIt>
+    struct is_nothrow_iterable_ : std::bool_constant<
+        noexcept(++std::declval<InputIt&>()) &&                         // nothrow ++input
+        noexcept(++std::declval<OutputIt&>()) &&                        // nothrow ++output
+        noexcept(*std::declval<InputIt&>()) &&                          // nothrow *input
+        noexcept(*std::declval<OutputIt&>()) &&                         // nothrow *output
+        noexcept(std::declval<InputIt&>() != std::declval<InputIt&>())  // nothrow input != input
+        > {};
+
+    template<typename InputIt, typename OutputIt = InputIt>
+    inline constexpr bool is_nothrow_iterable_v_ =
+        is_nothrow_iterable_<InputIt, OutputIt>::value;
 }
-
-/**
- * @brief Return an rvalue reference to x if From&& is nothrow
- * assignable to To& or if const From& is not assignable to To&.
- * Otherwise, returns a constant lvalue reference to x.
- * 
- * Usage: `a = move_if_noexcept_assign_<TypeOfA>(b);`
- * 
- * @tparam To The type to check against to see if it can be nothrow assigned from x.
- * @tparam From The type of x.
- * @param x The value to obtain an rvalue or lvalue reference to.
- * @return An rvalue reference to x if From&& is nothrow assignable to
- * To& or if const From& is not assignable to To&. Otherwise, a constant
- * lvalue reference to x.
- */
-template<typename To, typename From>
-[[nodiscard]] constexpr std::conditional_t<
-    !std::is_nothrow_assignable_v<
-        std::add_lvalue_reference_t<To>,
-        std::add_rvalue_reference_t<From>> &&
-
-    std::is_assignable_v<
-        std::add_lvalue_reference_t<To>,
-        std::add_lvalue_reference_t<std::add_const_t<From>>>,
-
-    const From&, From&&>
-    move_if_noexcept_assign_(From& x) noexcept
-{
-    return std::move(x);
-}
-
-template<typename InputIt, typename OutputIt = InputIt>
-struct is_nothrow_uninitialized_movable_ : std::bool_constant<
-    // Can we nothrow-construct OutputIt::value_type from InputIt::value_type&& ?
-    // (nothrow move-construct)
-    std::is_nothrow_constructible_v<
-        typename std::iterator_traits<OutputIt>::value_type,
-        std::add_rvalue_reference_t<
-            typename std::iterator_traits<InputIt>::value_type>> ||
-
-    // Can we nothrow-construct OutputIt::value_type from const InputIt::value_type& ?
-    // (nothrow copy-construct)
-    std::is_nothrow_constructible_v<
-        typename std::iterator_traits<OutputIt>::value_type,
-        std::add_lvalue_reference_t<std::add_const_t<
-            typename std::iterator_traits<InputIt>::value_type>>>> {};
-
-template<typename InputIt, typename OutputIt = InputIt>
-inline constexpr bool is_nothrow_uninitialized_movable_v_ =
-    is_nothrow_uninitialized_movable_<InputIt, OutputIt>::value;
-
-template<typename InputIt, typename OutputIt = InputIt>
-struct is_nothrow_movable_ : std::bool_constant<
-    // Can we nothrow-assign InputIt::value_type&& to OutputIt::value_type& ?
-    // (nothrow move-assign)
-    std::is_nothrow_assignable_v<
-        std::add_lvalue_reference_t<
-            typename std::iterator_traits<OutputIt>::value_type>,
-        std::add_rvalue_reference_t<
-            typename std::iterator_traits<InputIt>::value_type>> ||
-
-    // Or can we nothrow-assign const InputIt::value_type& to OutputIt::value_type& ?
-    // (nothrow copy-assign)
-    std::is_nothrow_assignable_v<
-        std::add_lvalue_reference_t<
-            typename std::iterator_traits<OutputIt>::value_type>,
-        std::add_lvalue_reference_t<std::add_const_t<
-            typename std::iterator_traits<InputIt>::value_type>>>> {};
-
-template<typename InputIt, typename OutputIt = InputIt>
-inline constexpr bool is_nothrow_movable_v_ =
-    is_nothrow_movable_<InputIt, OutputIt>::value;
-
-template<typename InputIt, typename OutputIt = InputIt>
-struct is_nothrow_iterable_ : std::bool_constant<
-    noexcept(++std::declval<InputIt&>()) &&                         // nothrow ++input
-    noexcept(++std::declval<OutputIt&>()) &&                        // nothrow ++output
-    noexcept(*std::declval<InputIt&>()) &&                          // nothrow *input
-    noexcept(*std::declval<OutputIt&>()) &&                         // nothrow *output
-    noexcept(std::declval<InputIt&>() != std::declval<InputIt&>())  // nothrow input != input
-    > {};
-
-template<typename InputIt, typename OutputIt = InputIt>
-inline constexpr bool is_nothrow_iterable_v_ =
-    is_nothrow_iterable_<InputIt, OutputIt>::value;
-} // detail_
 
 template<typename T>
 constexpr void destruct(T& obj) noexcept
@@ -295,6 +295,6 @@ OutputIt move_strong(InputIt begin, InputIt end, OutputIt dst) noexcept(
 
     return dst;
 }
-} // rad
+}
 
 #endif

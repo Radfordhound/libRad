@@ -210,8 +210,10 @@ public:
         return *this;
     }
 
-    inline stack_or_heap_memory() noexcept :
-        data_(stackMemory_) {}
+    inline stack_or_heap_memory() noexcept
+        : data_(stackMemory_)
+    {
+    }
 
     inline stack_or_heap_memory(std::size_t size)
     {
@@ -230,6 +232,6 @@ public:
         deallocate_();
     }
 };
-} // rad
+}
 
 #endif

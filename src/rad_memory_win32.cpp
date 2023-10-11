@@ -12,9 +12,7 @@
 #include <cstdlib>
 #include <crtdbg.h>
 
-namespace rad
-{
-namespace detail_
+namespace rad::detail_
 {
 void* allocate_(std::size_t size) noexcept
 {
@@ -104,5 +102,4 @@ void free_aligned_(void* ptr) noexcept
         _aligned_free_dbg(ptr);
     }
 #endif
-} // detail_
-} // rad
+}

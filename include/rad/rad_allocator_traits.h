@@ -22,58 +22,58 @@ namespace rad
 {
 namespace detail_
 {
-#if RAD_USE_DEBUG_MEMORY == 1
+    #if RAD_USE_DEBUG_MEMORY == 1
+        template<class AllocatorTraits, class = void>
+        struct allocator_has_debug_allocate : std::false_type {};
+
+        template<class AllocatorTraits>
+        struct allocator_has_debug_allocate<AllocatorTraits, std::void_t<decltype(
+            std::declval<typename AllocatorTraits::allocator_type&>().allocate(
+                std::declval<const typename AllocatorTraits::size_type&>(), // count
+                std::declval<const debug_memory_alloc_info&>()              // allocInfo
+            ))>> : std::true_type {};
+
+        template<class AllocatorTraits, class = void>
+        struct allocator_has_debug_reallocate : std::false_type {};
+
+        template<class AllocatorTraits>
+        struct allocator_has_debug_reallocate<AllocatorTraits, std::void_t<decltype(
+            std::declval<typename AllocatorTraits::allocator_type&>().reallocate(
+                std::declval<const typename AllocatorTraits::pointer&>(),   // ptr
+                std::declval<const typename AllocatorTraits::size_type&>(), // oldAliveCount
+                std::declval<const typename AllocatorTraits::size_type&>(), // oldCount
+                std::declval<const typename AllocatorTraits::size_type&>(), // newCount
+                std::declval<const debug_memory_alloc_info&>()              // allocInfo
+            ))>> : std::true_type {};
+    #else
+        template<class AllocatorTraits>
+        struct allocator_has_debug_allocate : std::false_type {};
+
+        template<class AllocatorTraits>
+        struct allocator_has_debug_reallocate : std::false_type {};
+    #endif
+
     template<class AllocatorTraits, class = void>
-    struct allocator_has_debug_allocate : std::false_type {};
+    struct allocator_has_reallocate : std::false_type {};
 
     template<class AllocatorTraits>
-    struct allocator_has_debug_allocate<AllocatorTraits, std::void_t<decltype(
-        std::declval<typename AllocatorTraits::allocator_type&>().allocate(
-            std::declval<const typename AllocatorTraits::size_type&>(), // count
-            std::declval<const debug_memory_alloc_info&>()              // allocInfo
-        ))>> : std::true_type {};
-
-    template<class AllocatorTraits, class = void>
-    struct allocator_has_debug_reallocate : std::false_type {};
-
-    template<class AllocatorTraits>
-    struct allocator_has_debug_reallocate<AllocatorTraits, std::void_t<decltype(
+    struct allocator_has_reallocate<AllocatorTraits, std::void_t<decltype(
         std::declval<typename AllocatorTraits::allocator_type&>().reallocate(
             std::declval<const typename AllocatorTraits::pointer&>(),   // ptr
             std::declval<const typename AllocatorTraits::size_type&>(), // oldAliveCount
             std::declval<const typename AllocatorTraits::size_type&>(), // oldCount
-            std::declval<const typename AllocatorTraits::size_type&>(), // newCount
-            std::declval<const debug_memory_alloc_info&>()              // allocInfo
+            std::declval<const typename AllocatorTraits::size_type&>()  // newCount
         ))>> : std::true_type {};
-#else
-    template<class AllocatorTraits>
-    struct allocator_has_debug_allocate : std::false_type {};
+
+    template<class AllocatorTraits, class = void>
+    struct allocator_has_destroy : std::false_type {};
 
     template<class AllocatorTraits>
-    struct allocator_has_debug_reallocate : std::false_type {};
-#endif
-
-template<class AllocatorTraits, class = void>
-struct allocator_has_reallocate : std::false_type {};
-
-template<class AllocatorTraits>
-struct allocator_has_reallocate<AllocatorTraits, std::void_t<decltype(
-    std::declval<typename AllocatorTraits::allocator_type&>().reallocate(
-        std::declval<const typename AllocatorTraits::pointer&>(),   // ptr
-        std::declval<const typename AllocatorTraits::size_type&>(), // oldAliveCount
-        std::declval<const typename AllocatorTraits::size_type&>(), // oldCount
-        std::declval<const typename AllocatorTraits::size_type&>()  // newCount
-    ))>> : std::true_type {};
-
-template<class AllocatorTraits, class = void>
-struct allocator_has_destroy : std::false_type {};
-
-template<class AllocatorTraits>
-struct allocator_has_destroy<AllocatorTraits, std::void_t<decltype(
-    std::declval<typename AllocatorTraits::allocator_type&>().destroy(
-        std::declval<const typename AllocatorTraits::pointer&>()    // p
-    ))>> : std::true_type {};
-} // detail_
+    struct allocator_has_destroy<AllocatorTraits, std::void_t<decltype(
+        std::declval<typename AllocatorTraits::allocator_type&>().destroy(
+            std::declval<const typename AllocatorTraits::pointer&>()    // p
+        ))>> : std::true_type {};
+}
 
 template<class Allocator>
 struct allocator_traits : public std::allocator_traits<Allocator>
@@ -254,6 +254,6 @@ public:
     }
 #endif
 };
-} // rad
+}
 
 #endif
