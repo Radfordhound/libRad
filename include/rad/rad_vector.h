@@ -27,13 +27,13 @@ class vector
     using allocator_traits_ = allocator_traits<Allocator>;
     using size_type_        = typename allocator_traits_::size_type;
 
-    struct values_
+    struct values_t_
     {
-        T*  dataBegin = nullptr;
-        T*  dataEnd = nullptr;
-        T*  bufEnd = nullptr;
+        T*  dataBegin;
+        T*  dataEnd;
+        T*  bufEnd;
 
-        void reset() noexcept
+        constexpr void reset() noexcept
         {
             dataBegin = nullptr;
             dataEnd = nullptr;
@@ -41,7 +41,27 @@ class vector
         }
     };
 
-    pair<Allocator, values_>    data_;
+    pair<Allocator, values_t_>    data_;
+
+    constexpr const Allocator& allocator_() const noexcept
+    {
+        return data_.first();
+    }
+
+    constexpr Allocator& allocator_() noexcept
+    {
+        return data_.first();
+    }
+
+    constexpr const values_t_& values_() const noexcept
+    {
+        return data_.second();
+    }
+
+    constexpr values_t_& values_() noexcept
+    {
+        return data_.second();
+    }
 
     static constexpr bool must_call_allocator_destroy_on_elements_() noexcept
     {
@@ -77,11 +97,11 @@ class vector
 
         // NOTE: This is safe even if dataBegin and dataEnd are both nullptr.
 
-        Allocator& allocator = data_.first();
+        auto& allocator = allocator_();
 
         if constexpr (must_call_allocator_destroy_on_elements_())
         {
-            const values_& v = data_.second();
+            const auto& v = values_();
 
             for (auto it = v.dataBegin; it != v.dataEnd; ++it)
             {
@@ -107,14 +127,24 @@ public:
     // TODO: reverse_iterator
     // TODO: const_reverse_iterator
 
+    constexpr allocator_type get_allocator() const noexcept
+    {
+        return allocator_();
+    }
+
+    constexpr const allocator_type& allocator() const noexcept
+    {
+        return allocator_();
+    }
+
     inline const T* data() const noexcept
     {
-        return data_.second().dataBegin;
+        return values_().dataBegin;
     }
 
     inline T* data() noexcept
     {
-        return data_.second().dataBegin;
+        return values_().dataBegin;
     }
 
     inline size_type size() const noexcept
@@ -124,7 +154,7 @@ public:
 
     inline size_type capacity() const noexcept
     {
-        return (data_.second().bufEnd - begin());
+        return (values_().bufEnd - begin());
     }
 
     constexpr size_type max_size() const noexcept
@@ -135,7 +165,7 @@ public:
 
         return std::min<size_type>(
             (std::numeric_limits<difference_type>::max)(),
-            allocator_traits_::max_size(data_.first())
+            allocator_traits_::max_size(allocator_())
         );
     }
 
@@ -146,46 +176,46 @@ public:
 
     inline const_iterator cbegin() const noexcept
     {
-        return data_.second().dataBegin;
+        return values_().dataBegin;
     }
 
     inline const_iterator begin() const noexcept
     {
-        return data_.second().dataBegin;
+        return values_().dataBegin;
     }
 
     inline iterator begin() noexcept
     {
-        return data_.second().dataBegin;
+        return values_().dataBegin;
     }
 
     inline const_iterator cend() const noexcept
     {
-        return data_.second().dataEnd;
+        return values_().dataEnd;
     }
 
     inline const_iterator end() const noexcept
     {
-        return data_.second().dataEnd;
+        return values_().dataEnd;
     }
 
     inline iterator end() noexcept
     {
-        return data_.second().dataEnd;
+        return values_().dataEnd;
     }
 
     template<typename... Args>
     reference emplace_back(Args&&... args)
     {
         // Reallocate if necessary.
-        values_& v = data_.second();
+        auto& v = values_();
         if (v.dataEnd == v.bufEnd)
         {
             const auto oldDataCount = size();
             const auto newBufCount = compute_new_buf_count_(oldDataCount + 1);
             
             v.dataBegin = allocator_traits_::reallocate(
-                data_.first(), data(), oldDataCount, capacity(),
+                allocator_(), v.dataBegin, oldDataCount, capacity(),
                 newBufCount);
 
             v.dataEnd = (v.dataBegin + oldDataCount);
@@ -231,10 +261,10 @@ public:
 
         if constexpr (must_call_allocator_destroy_on_elements_())
         {
-            allocator_traits_::destroy(data_.first(), it);
+            allocator_traits_::destroy(allocator_(), it);
         }
 
-        data_.second().dataEnd = it;
+        values_().dataEnd = it;
         
         return const_cast<iterator>(pos);
     }
@@ -244,7 +274,7 @@ public:
     void clear() noexcept
     {
         destroy_data_();
-        data_.second().reset();
+        values_().reset();
     }
 
     /**
@@ -261,7 +291,7 @@ public:
     pointer release() noexcept
     {
         const auto dataBuf = data();
-        data_.second().reset();
+        values_().reset();
         return dataBuf;
     }
 
@@ -275,20 +305,45 @@ public:
             destroy_data_();
 
             data_ = std::move(data_);
-            other.data_.second().reset();
+            other.values_().reset();
         }
 
         return *this;
     }
 
-    vector() noexcept = default;
+    constexpr vector() noexcept
+    {
+        values_().reset();
+    }
+
+    vector(std::size_t count, const T& val,
+        const Allocator& allocator = Allocator())
+        : data_(allocator, {})
+    {
+        // Allocate memory.
+        auto& v = values_();
+
+        v.dataBegin = allocator_traits_::allocate(allocator_(), count);
+        v.bufEnd = v.dataEnd = (v.dataBegin + count);
+
+        // Fill-construct values.
+        try
+        {
+            std::uninitialized_fill(v.dataBegin, v.dataEnd, val);
+        }
+        catch (...)
+        {
+            allocator_traits_::deallocate(allocator_(), v.dataBegin, count);
+            throw;
+        }
+    }
 
     vector(const vector& other) = delete; // TODO
 
     vector(vector&& other) noexcept
         : data_(std::move(other.data_))
     {
-        other.data_.second().reset();
+        other.values_().reset();
     }
 
     inline ~vector()
