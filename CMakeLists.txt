@@ -1,12 +1,10 @@
 # Setup CMake
 cmake_minimum_required(VERSION 3.18...3.26)
 
-if(WIN32)
-    set(CMAKE_DEBUG_POSTFIX d)
-    set(RAD_USE_DEBUG_POSTFIX
-        DEBUG_POSTFIX ${CMAKE_DEBUG_POSTFIX}
-    )
-endif()
+set(CMAKE_DEBUG_POSTFIX d)
+set(RAD_USE_DEBUG_POSTFIX
+    DEBUG_POSTFIX ${CMAKE_DEBUG_POSTFIX}
+)
 
 # Setup project
 project(libRad
@@ -117,8 +115,8 @@ if(WIN32)
         )
     endif()
 elseif(CMAKE_SHARED_LIBRARY_PREFIX STREQUAL "lib")
-    # Ensures the output name is "libRad", not "liblibRad"
-    set_target_properties(libRad PROPERTIES OUTPUT_NAME "Rad")
+    # Ensures the output name is "librad", not "liblibRad"
+    set_target_properties(libRad PROPERTIES OUTPUT_NAME "rad")
 endif()
 
 # Compiler-specific settings
