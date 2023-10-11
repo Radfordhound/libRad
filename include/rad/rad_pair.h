@@ -28,8 +28,8 @@ namespace detail_
         std::is_nothrow_default_constructible_v<T2>);
 
     template<typename T1, typename T2,
-        bool HasT1 = !std::is_empty_v<T1> && !std::is_final_v<T1>,
-        bool HasT2 = !std::is_empty_v<T1> && !std::is_final_v<T1>>
+        bool HasT1 = !std::is_empty_v<T1> || std::is_final_v<T1>,
+        bool HasT2 = !std::is_empty_v<T1> || std::is_final_v<T1>>
     class compressed_pair final
     {
         T1 first_;
@@ -59,6 +59,16 @@ namespace detail_
         template<std::enable_if_t<is_default_constructible_v<T1, T2>, int> = 0>
         constexpr compressed_pair() noexcept(
             is_nothrow_default_constructible_v<T1, T2>)
+        {
+        }
+
+        // TODO: Mark as noexcept if possible.
+        template<typename U1 = T1, typename U2 = T2, std::enable_if_t<
+            (std::is_copy_constructible_v<U1> && std::is_copy_constructible_v<U2>),
+            int> = 0>
+        constexpr compressed_pair(const T1& a, const T2& b)
+            : first_(a)
+            , second_(b)
         {
         }
     };
@@ -94,6 +104,16 @@ namespace detail_
             is_nothrow_default_constructible_v<T1, T2>)
         {
         }
+
+        // TODO: Mark as noexcept if possible.
+        template<typename U1 = T1, typename U2 = T2, std::enable_if_t<
+            (std::is_copy_constructible_v<U1> && std::is_copy_constructible_v<U2>),
+            int> = 0>
+        constexpr compressed_pair(const T1& a, const T2& b)
+            : T1(a)
+            , second_(b)
+        {
+        }
     };
 
     template<typename T1, typename T2>
@@ -127,6 +147,16 @@ namespace detail_
             is_nothrow_default_constructible_v<T1, T2>)
         {
         }
+
+        // TODO: Mark as noexcept if possible.
+        template<typename U1 = T1, typename U2 = T2, std::enable_if_t<
+            (std::is_copy_constructible_v<U1> && std::is_copy_constructible_v<U2>),
+            int> = 0>
+        constexpr compressed_pair(const T1& a, const T2& b)
+            : T2(a)
+            , first_(b)
+        {
+        }
     };
 
     template<typename T1, typename T2>
@@ -156,6 +186,16 @@ namespace detail_
         template<std::enable_if_t<is_default_constructible_v<T1, T2>, int> = 0>
         constexpr compressed_pair() noexcept(
             is_nothrow_default_constructible_v<T1, T2>)
+        {
+        }
+
+        // TODO: Mark as noexcept if possible.
+        template<typename U1 = T1, typename U2 = T2, std::enable_if_t<
+            (std::is_copy_constructible_v<U1> && std::is_copy_constructible_v<U2>),
+            int> = 0>
+        constexpr compressed_pair(const T1& a, const T2& b)
+            : T1(a)
+            , T2(b)
         {
         }
     };
@@ -192,13 +232,31 @@ public:
 
     // TODO
 
-    template<std::enable_if_t<detail_::is_default_constructible_v<T1, T2>, int> = 0>
+    // TODO: Make this conditionally explicit if one of the types is not *implicitly* default constructible.
+    template<typename U1 = T1, typename U2 = T2, std::enable_if_t<
+        detail_::is_default_constructible_v<U1, U2>,
+        int> = 0>
     constexpr pair() noexcept(detail_::is_nothrow_default_constructible_v<T1, T2>)
     {
     }
 
-    //template<std::enable_if_t<detail::is_copy_constructible_v<T1, T2>, int> = 0>
-    //constexpr explicit()
+    template<typename U1 = T1, typename U2 = T2, std::enable_if_t<
+        (std::is_copy_constructible_v<U1> && std::is_copy_constructible_v<U2>) &&
+        (std::is_convertible_v<const U1&, U1> && std::is_convertible_v<const U2&, U2>),
+        int> = 0>
+    constexpr pair(const T1& a, const T2& b)
+        : data_(a, b)
+    {
+    }
+
+    template<typename U1 = T1, typename U2 = T2, std::enable_if<(
+        (std::is_copy_constructible_v<U1> && std::is_copy_constructible_v<U2>) &&
+        (!std::is_convertible_v<const U1&, U1> || !std::is_convertible_v<const U2&, U2>)),
+        int> = 0>
+    explicit constexpr pair(const T1& a, const T2& b)
+        : data_(a, b)
+    {
+    }
 };
 }
 
