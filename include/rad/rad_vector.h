@@ -91,6 +91,27 @@ class vector
             newDataCount);
     }
 
+    template<typename... Args>
+    void init_with_direct_construct_(size_type_ count, const Args&... args)
+    {
+        // Allocate memory.
+        auto& v = values_();
+
+        v.dataBegin = allocator_traits_::allocate(allocator_(), count);
+        v.bufEnd = v.dataEnd = (v.dataBegin + count);
+
+        // Direct-construct elements.
+        try
+        {
+            uninitialized_direct_construct(v.dataBegin, v.dataEnd, args...);
+        }
+        catch (...)
+        {
+            allocator_traits_::deallocate(allocator_(), v.dataBegin, count);
+            throw;
+        }
+    }
+
     void destroy_data_()
     {
         // Destruct elements if necessary.
@@ -336,22 +357,7 @@ public:
     template<typename... Args>
     explicit vector(size_type count, const Args&... args)
     {
-        // Allocate memory.
-        auto& v = values_();
-
-        v.dataBegin = allocator_traits_::allocate(allocator_(), count);
-        v.bufEnd = v.dataEnd = (v.dataBegin + count);
-
-        // Direct-construct values.
-        try
-        {
-            uninitialized_direct_construct(v.dataBegin, v.dataEnd, args...);
-        }
-        catch (...)
-        {
-            allocator_traits_::deallocate(allocator_(), v.dataBegin, count);
-            throw;
-        }
+        init_with_direct_construct_(count, args...);
     }
 
     template<typename... Args>
@@ -359,68 +365,23 @@ public:
         size_type count, const Args&... args)
         : data_(allocator, {})
     {
-        // Allocate memory.
-        auto& v = values_();
-
-        v.dataBegin = allocator_traits_::allocate(allocator_(), count);
-        v.bufEnd = v.dataEnd = (v.dataBegin + count);
-
-        // Direct-construct values.
-        try
-        {
-            uninitialized_direct_construct(v.dataBegin, v.dataEnd, args...);
-        }
-        catch (...)
-        {
-            allocator_traits_::deallocate(allocator_(), v.dataBegin, count);
-            throw;
-        }
+        init_with_direct_construct_(count, args...);
     }
 
     vector(size_type count, const T& val)
     {
-        // Allocate memory.
-        auto& v = values_();
-
-        v.dataBegin = allocator_traits_::allocate(allocator_(), count);
-        v.bufEnd = v.dataEnd = (v.dataBegin + count);
-
-        // Fill-construct values.
-        try
-        {
-            std::uninitialized_fill(v.dataBegin, v.dataEnd, val);
-        }
-        catch (...)
-        {
-            allocator_traits_::deallocate(allocator_(), v.dataBegin, count);
-            throw;
-        }
+        init_with_direct_construct_(count, val);
     }
 
     vector(const Allocator& allocator, size_type count, const T& val)
         : data_(allocator, {})
     {
-        // Allocate memory.
-        auto& v = values_();
-
-        v.dataBegin = allocator_traits_::allocate(allocator_(), count);
-        v.bufEnd = v.dataEnd = (v.dataBegin + count);
-
-        // Fill-construct values.
-        try
-        {
-            std::uninitialized_fill(v.dataBegin, v.dataEnd, val);
-        }
-        catch (...)
-        {
-            allocator_traits_::deallocate(allocator_(), v.dataBegin, count);
-            throw;
-        }
+        init_with_direct_construct_(count, val);
     }
 
     vector(const vector& other) = delete; // TODO
 
-    vector(vector&& other) noexcept
+    constexpr vector(vector&& other) noexcept
         : data_(std::move(other.data_))
     {
         other.values_().reset();
