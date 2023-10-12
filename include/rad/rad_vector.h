@@ -71,7 +71,7 @@ class vector
         );
     }
 
-    size_type_ compute_new_buf_count_(size_type_ newDataCount) const noexcept
+    size_type_ compute_new_capacity_(size_type_ newDataCount) const noexcept
     {
         // If geometric growth would exceed max_size() and potentially
         // overflow, we just return max_size() instead.
@@ -110,6 +110,22 @@ class vector
             allocator_traits_::deallocate(allocator_(), v.dataBegin, count);
             throw;
         }
+    }
+
+    void reallocate_(size_type_ oldDataCount, size_type_ oldCapacity, size_type_ newCapacity)
+    {
+        auto& v = values_();
+        v.dataBegin = allocator_traits_::reallocate(
+            allocator_(), v.dataBegin, oldDataCount, oldCapacity,
+            newCapacity);
+
+        v.dataEnd = (v.dataBegin + oldDataCount);
+        v.bufEnd = (v.dataBegin + newCapacity);
+    }
+
+    inline void reallocate_(size_type_ newCapacity)
+    {
+        reallocate_(size(), capacity(), newCapacity);
     }
 
     void destroy_data_()
@@ -225,6 +241,16 @@ public:
         return values_().dataEnd;
     }
 
+    void reserve(size_type newCapacity)
+    {
+        const auto oldCapacity = capacity();
+
+        if (newCapacity > oldCapacity)
+        {
+            reallocate_(size(), oldCapacity, newCapacity);
+        }
+    }
+
     template<typename... Args>
     reference emplace_back(Args&&... args)
     {
@@ -233,14 +259,9 @@ public:
         if (v.dataEnd == v.bufEnd)
         {
             const auto oldDataCount = size();
-            const auto newBufCount = compute_new_buf_count_(oldDataCount + 1);
-            
-            v.dataBegin = allocator_traits_::reallocate(
-                allocator_(), v.dataBegin, oldDataCount, capacity(),
-                newBufCount);
+            const auto newCapacity = compute_new_capacity_(oldDataCount + 1);
 
-            v.dataEnd = (v.dataBegin + oldDataCount);
-            v.bufEnd = (v.dataBegin + newBufCount);
+            reallocate_(oldDataCount, capacity(), newCapacity);
         }
 
         // Construct new element.
