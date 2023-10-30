@@ -16,15 +16,11 @@ namespace rad::detail_
 {
 void* allocate_(std::size_t size) noexcept
 {
-    RAD_VALIDATE_ALLOC_ARGS(size)
-
     return std::malloc(size);
 }
 
 void* reallocate_(void* ptr, std::size_t size) noexcept
 {
-    RAD_VALIDATE_ALLOC_ARGS(size)
-
     return std::realloc(ptr, size);
 }
 
@@ -56,8 +52,6 @@ void free_aligned_(void* ptr) noexcept
     void* allocate_debug_(std::size_t size,
         debug_memory_alloc_info allocInfo) noexcept
     {
-        RAD_VALIDATE_ALLOC_ARGS(size)
-
         return _malloc_dbg(size, _NORMAL_BLOCK,
             allocInfo.filePath, allocInfo.lineNumber);
     }
@@ -66,8 +60,6 @@ void free_aligned_(void* ptr) noexcept
         void* ptr, std::size_t size,
         debug_memory_alloc_info allocInfo) noexcept
     {
-        RAD_VALIDATE_ALLOC_ARGS(size)
-
         return _realloc_dbg(ptr, size, _NORMAL_BLOCK,
             allocInfo.filePath, allocInfo.lineNumber);
     }
