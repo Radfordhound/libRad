@@ -249,7 +249,7 @@ public:
     {
     }
 
-    template<typename U1 = T1, typename U2 = T2, std::enable_if<(
+    template<typename U1 = T1, typename U2 = T2, std::enable_if_t<(
         (std::is_copy_constructible_v<U1> && std::is_copy_constructible_v<U2>) &&
         (!std::is_convertible_v<const U1&, U1> || !std::is_convertible_v<const U2&, U2>)),
         int> = 0>
