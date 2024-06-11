@@ -1,12 +1,9 @@
-/**
- * @file rad_stack_or_heap_memory.h
- * @author Graham Scott
- * @brief Header file providing rad::stack_or_heap_memory.
- * @version 0.1
- * @date 2023-04-07
- * 
- * @copyright Copyright (c) 2023 Graham Scott
- */
+/// @file rad_stack_or_heap_memory.h
+/// @author Graham Scott
+/// @brief Header file providing rad::stack_or_heap_memory.
+/// @date 2023-04-07
+/// @copyright Copyright (c) Graham Scott; see LICENSE.txt file for details
+
 #ifndef RAD_STACK_OR_HEAP_MEMORY_H_INCLUDED
 #define RAD_STACK_OR_HEAP_MEMORY_H_INCLUDED
 

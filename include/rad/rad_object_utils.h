@@ -1,13 +1,10 @@
-/**
- * @file rad_object_utils.h
- * @author Graham Scott
- * @brief Header file providing utilities for managing objects (classes,
- * structs, primitive data types, etc.).
- * @version 0.1
- * @date 2023-04-03
- * 
- * @copyright Copyright (c) 2023 Graham Scott
- */
+/// @file rad_object_utils.h
+/// @author Graham Scott
+/// @brief Header file providing utilities for managing objects (classes,
+/// structs, primitive data types, etc.).
+/// @date 2023-04-03
+/// @copyright Copyright (c) Graham Scott; see LICENSE.txt file for details
+
 #ifndef RAD_OBJECT_UTILS_H_INCLUDED
 #define RAD_OBJECT_UTILS_H_INCLUDED
 
@@ -19,20 +16,18 @@ namespace rad
 {
 namespace detail_
 {
-    /**
-     * @brief Return an rvalue reference to x if To can be nothrow
-     * constructed from From&& or if To can be constructed from const From&.
-     * Otherwise, returns a constant lvalue reference to x.
-     * 
-     * Usage: `::new (&a) TypeOfA(move_if_noexcept_construct_<TypeOfA>(b));`
-     * 
-     * @tparam To The type to check against to see if it can be nothrow-constructed from x.
-     * @tparam From The type of x.
-     * @param x The value to obtain an rvalue or lvalue reference to.
-     * @return An rvalue reference to x if To can be nothrow constructed
-     * from From&& or if To can be constructed from const From&. Otherwise, a
-     * constant lvalue reference to x.
-     */
+    /// @brief Return an rvalue reference to x if To can be nothrow
+    /// constructed from From&& or if To can be constructed from const From&.
+    /// Otherwise, returns a constant lvalue reference to x.
+    /// 
+    /// Usage: `::new (&a) TypeOfA(move_if_noexcept_construct_<TypeOfA>(b));`
+    /// 
+    /// @tparam To The type to check against to see if it can be nothrow-constructed from x.
+    /// @tparam From The type of x.
+    /// @param x The value to obtain an rvalue or lvalue reference to.
+    /// @return An rvalue reference to x if To can be nothrow constructed
+    /// from From&& or if To can be constructed from const From&. Otherwise, a
+    /// constant lvalue reference to x.
     template<typename To, typename From>
     [[nodiscard]] constexpr std::conditional_t<
         !std::is_nothrow_constructible_v<To, std::add_rvalue_reference_t<From>> &&
@@ -43,20 +38,18 @@ namespace detail_
         return std::move(x);
     }
 
-    /**
-     * @brief Return an rvalue reference to x if From&& is nothrow
-     * assignable to To& or if const From& is not assignable to To&.
-     * Otherwise, returns a constant lvalue reference to x.
-     * 
-     * Usage: `a = move_if_noexcept_assign_<TypeOfA>(b);`
-     * 
-     * @tparam To The type to check against to see if it can be nothrow assigned from x.
-     * @tparam From The type of x.
-     * @param x The value to obtain an rvalue or lvalue reference to.
-     * @return An rvalue reference to x if From&& is nothrow assignable to
-     * To& or if const From& is not assignable to To&. Otherwise, a constant
-     * lvalue reference to x.
-     */
+    /// @brief Return an rvalue reference to x if From&& is nothrow
+    /// assignable to To& or if const From& is not assignable to To&.
+    /// Otherwise, returns a constant lvalue reference to x.
+    /// 
+    /// Usage: `a = move_if_noexcept_assign_<TypeOfA>(b);`
+    /// 
+    /// @tparam To The type to check against to see if it can be nothrow assigned from x.
+    /// @tparam From The type of x.
+    /// @param x The value to obtain an rvalue or lvalue reference to.
+    /// @return An rvalue reference to x if From&& is nothrow assignable to
+    /// To& or if const From& is not assignable to To&. Otherwise, a constant
+    /// lvalue reference to x.
     template<typename To, typename From>
     [[nodiscard]] constexpr std::conditional_t<
         !std::is_nothrow_assignable_v<
@@ -251,33 +244,31 @@ auto uninitialized_move_strong(Iterator begin,
     }
 }
 
-/**
- * @brief Moves the elements from the given input range to
- * the given output destination, with strong exception guarantee.
- * 
- * Like std::move from <algorithm>, except with a strong exception guarantee.
- * 
- * The input range will be move-assigned to the output, unless the input is not
- * nothrow-move-assignable to the output, in which case, the input will be copy-assigned
- * to the output instead, unless the input can ONLY be move-assigned AND is not
- * nothrow-move-assignable, in which case, the input must be move-assigned and the
- * strong exception guarantee will be waived.
- * 
- * If the input is nothrow-move-assignable or nothrow-copy-assignable to the output, and
- * the input and output iterators do not throw, this function is marked as noexcept, and
- * is guaranteed to never throw.
- * 
- * Otherwise, this function may throw, but guarantees that if this happens, the input will
- * ALWAYS be left in the same state as it was before this function was called, unless the
- * strong exception guarantee was waived as described above.
- * 
- * @tparam InputIt The type of iterator used to iterate over the given input range.
- * @tparam OutputIt The type of iterator used to iterate over the given output.
- * @param begin The first element in the input range.
- * @param end One past the last element in the input range.
- * @param dst The first element in the output range.
- * @return OutputIt One past the last element in the output range.
- */
+/// @brief Moves the elements from the given input range to
+/// the given output destination, with strong exception guarantee.
+/// 
+/// Like std::move from <algorithm>, except with a strong exception guarantee.
+/// 
+/// The input range will be move-assigned to the output, unless the input is not
+/// nothrow-move-assignable to the output, in which case, the input will be copy-assigned
+/// to the output instead, unless the input can ONLY be move-assigned AND is not
+/// nothrow-move-assignable, in which case, the input must be move-assigned and the
+/// strong exception guarantee will be waived.
+/// 
+/// If the input is nothrow-move-assignable or nothrow-copy-assignable to the output, and
+/// the input and output iterators do not throw, this function is marked as noexcept, and
+/// is guaranteed to never throw.
+/// 
+/// Otherwise, this function may throw, but guarantees that if this happens, the input will
+/// ALWAYS be left in the same state as it was before this function was called, unless the
+/// strong exception guarantee was waived as described above.
+/// 
+/// @tparam InputIt The type of iterator used to iterate over the given input range.
+/// @tparam OutputIt The type of iterator used to iterate over the given output.
+/// @param begin The first element in the input range.
+/// @param end One past the last element in the input range.
+/// @param dst The first element in the output range.
+/// @return OutputIt One past the last element in the output range.
 template<typename InputIt, typename OutputIt>
 OutputIt move_strong(InputIt begin, InputIt end, OutputIt dst) noexcept(
     detail_::is_nothrow_movable_v_<InputIt, OutputIt> &&

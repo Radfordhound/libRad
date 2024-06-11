@@ -1,13 +1,10 @@
-/**
- * @file rad_default_allocator.h
- * @author Graham Scott
- * @brief Header file providing rad::default_allocator; a class similar
- * to std::allocator, but with additional features/optimizations.
- * @version 0.1
- * @date 2023-03-31
- * 
- * @copyright Copyright (c) 2023 Graham Scott
- */
+/// @file rad_default_allocator.h
+/// @author Graham Scott
+/// @brief Header file providing rad::default_allocator; a class similar
+/// to std::allocator, but with additional features/optimizations.
+/// @date 2023-03-31
+/// @copyright Copyright (c) Graham Scott; see LICENSE.txt file for details
+
 #ifndef RAD_DEFAULT_ALLOCATOR_H_INCLUDED
 #define RAD_DEFAULT_ALLOCATOR_H_INCLUDED
 
@@ -19,12 +16,10 @@
 
 namespace rad
 {
-/**
- * @brief The default allocator class for libRad; used by all libRad containers by default.
- * This class allocates/rellocates/frees memory using libRad memory allocation functions.
- * 
- * @tparam T The type of data to be allocated.
- */
+/// @brief The default allocator class for libRad; used by all libRad containers by default.
+/// This class allocates/rellocates/frees memory using libRad memory allocation functions.
+/// 
+/// @tparam T The type of data to be allocated.
 template<typename T>
 class default_allocator
 {

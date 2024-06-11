@@ -1,13 +1,9 @@
-/**
- * @file rad_scoped_enum_helpers.h
- * @author Graham Scott
- * @brief Header file providing helpers for scoped enums.
- * @version 0.1
- * @date 2023-07-29
- * 
- * @copyright Copyright (c) 2023 Graham Scott
- * 
- */
+/// @file rad_scoped_enum_helpers.h
+/// @author Graham Scott
+/// @brief Header file providing helpers for scoped enums.
+/// @date 2023-07-29
+/// @copyright Copyright (c) Graham Scott; see LICENSE.txt file for details
+
 #ifndef RAD_SCOPED_ENUM_HELPERS
 #define RAD_SCOPED_ENUM_HELPERS
 

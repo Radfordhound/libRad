@@ -1,12 +1,9 @@
-/**
- * @file rad_defer.h
- * @author Graham Scott
- * @brief Header file providing defer functionality, similar to defer in Go and Zig.
- * @version 0.1
- * @date 2023-04-07
- * 
- * @copyright Copyright (c) 2023 Graham Scott
- */
+/// @file rad_defer.h
+/// @author Graham Scott
+/// @brief Header file providing defer functionality, similar to defer in Go and Zig.
+/// @date 2023-04-07
+/// @copyright Copyright (c) Graham Scott; see LICENSE.txt file for details
+
 #ifndef RAD_DEFER_H_INCLUDED
 #define RAD_DEFER_H_INCLUDED
 

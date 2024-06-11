@@ -1,13 +1,9 @@
-/**
- * @file rad_memory_impl.cpp
- * @author Graham Scott
- * @brief Common implementation file for libRad memory utilities.
- * @version 0.1
- * @date 2023-04-08
- * 
- * @copyright Copyright (c) 2023 Graham Scott
- * 
- */
+/// @file rad_memory_impl.cpp
+/// @author Graham Scott
+/// @brief Common implementation file for libRad memory utilities.
+/// @date 2023-04-08
+/// @copyright Copyright (c) Graham Scott; see LICENSE.txt file for details
+
 #include "rad_memory.h"
 
 #if RAD_USE_OPERATOR_NEW_DELETE_REPLACEMENTS == 1

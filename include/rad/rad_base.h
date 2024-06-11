@@ -1,13 +1,9 @@
-/**
- * @file rad_base.h
- * @author Graham Scott
- * @brief Header file providing base macros required by most header files in libRad.
- * @version 0.1
- * @date 2023-04-07
- * 
- * @copyright Copyright (c) 2023 Graham Scott
- * 
- */
+/// @file rad_base.h
+/// @author Graham Scott
+/// @brief Header file providing base macros required by most header files in libRad.
+/// @date 2023-04-07
+/// @copyright Copyright (c) Graham Scott; see LICENSE.txt file for details
+
 #ifndef RAD_BASE_H_INCLUDED
 #define RAD_BASE_H_INCLUDED
 

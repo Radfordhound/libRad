@@ -1,13 +1,10 @@
-/**
- * @file rad_pair.h
- * @author Graham Scott
- * @brief Header file providing rad::pair; a class similar to
- * std::pair, but with additional features/optimizations.
- * @version 0.1
- * @date 2023-04-04
- * 
- * @copyright Copyright (c) 2023 Graham Scott
- */
+/// @file rad_pair.h
+/// @author Graham Scott
+/// @brief Header file providing rad::pair; a class similar to
+/// std::pair, but with additional features/optimizations.
+/// @date 2023-04-04
+/// @copyright Copyright (c) Graham Scott; see LICENSE.txt file for details
+
 #ifndef RAD_PAIR_H_INCLUDED
 #define RAD_PAIR_H_INCLUDED
 

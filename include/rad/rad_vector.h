@@ -1,13 +1,9 @@
-/**
- * @file rad_vector.h
- * @author Graham Scott
- * @brief Header file providing rad::vector.
- * @version 0.1
- * @date 2023-06-14
- * 
- * @copyright Copyright (c) 2023 Graham Scott
- * 
- */
+/// @file rad_vector.h
+/// @author Graham Scott
+/// @brief Header file providing rad::vector.
+/// @date 2023-06-14
+/// @copyright Copyright (c) Graham Scott; see LICENSE.txt file for details
+
 #ifndef RAD_VECTOR_H_INCLUDED
 #define RAD_VECTOR_H_INCLUDED
 
@@ -319,17 +315,15 @@ public:
         values_().reset();
     }
 
-    /**
-     * @brief Releases ownership of the data buffer
-     * to the caller and resets the vector.
-     * 
-     * After calling this function, it is the caller's
-     * responsibility to destruct the elements within the
-     * data buffer if necessary and to deallocate the memory
-     * using the allocator's deallocate function or equivalent.
-     * 
-     * @return pointer A pointer to the data buffer, no longer owned by the vector.
-     */
+    /// @brief Releases ownership of the data buffer
+    /// to the caller and resets the vector.
+    /// 
+    /// After calling this function, it is the caller's
+    /// responsibility to destruct the elements within the
+    /// data buffer if necessary and to deallocate the memory
+    /// using the allocator's deallocate function or equivalent.
+    /// 
+    /// @return pointer A pointer to the data buffer, no longer owned by the vector.
     pointer release() noexcept
     {
         const auto dataBuf = data();

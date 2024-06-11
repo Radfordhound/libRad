@@ -1,14 +1,13 @@
-/**
- * @file rad_pch_impl.h
- * @author Graham Scott
- * @brief Precompiled header file for libRad.
- * @version 0.1
- * @date 2023-03-31
- * @copyright Copyright (c) 2023 Graham Scott
- * 
- * This file is automatically included in every
- * source file in the project thanks to CMake.
- */
+/// @file rad_pch_impl.h
+/// @author Graham Scott
+/// @brief Precompiled header file for libRad.
+/// @version 0.1
+/// @date 2023-03-31
+/// @copyright Copyright (c) Graham Scott; see LICENSE.txt file for details
+/// 
+/// This file is automatically included in every
+/// source file in the project thanks to CMake.
+
 #ifndef RAD_PCH_IMPL_H_INCLUDED
 #define RAD_PCH_IMPL_H_INCLUDED
 

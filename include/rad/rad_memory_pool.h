@@ -1,12 +1,9 @@
-/**
- * @file rad_memory_pool.h
- * @author Graham Scott
- * @brief Header file providing memory pools.
- * @version 0.1
- * @date 2023-10-10
- * 
- * @copyright Copyright (c) 2023 Graham Scott
- */
+/// @file rad_memory_pool.h
+/// @author Graham Scott
+/// @brief Header file providing memory pools.
+/// @date 2023-10-10
+/// @copyright Copyright (c) Graham Scott; see LICENSE.txt file for details
+
 #ifndef RAD_MEMORY_POOL_H_INCLUDED
 #define RAD_MEMORY_POOL_H_INCLUDED
 
