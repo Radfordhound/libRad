@@ -4,8 +4,8 @@
 /// @date 2023-07-29
 /// @copyright Copyright (c) Graham Scott; see LICENSE.txt file for details
 
-#ifndef RAD_SCOPED_ENUM_HELPERS
-#define RAD_SCOPED_ENUM_HELPERS
+#ifndef RAD_SCOPED_ENUM_HELPERS_H_INCLUDED
+#define RAD_SCOPED_ENUM_HELPERS_H_INCLUDED
 
 #include <type_traits>
 
