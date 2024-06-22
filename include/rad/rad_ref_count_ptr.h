@@ -38,11 +38,23 @@ public:
         return ptr_;
     }
 
-    void reset(pointer refCountObjPtr = pointer()) noexcept
+    void reset() noexcept
+    {
+        release_ref_();
+
+        ptr_ = nullptr;
+    }
+
+    void reset(pointer refCountObjPtr) noexcept
     {
         release_ref_();
 
         ptr_ = refCountObjPtr;
+
+        if (ptr_)
+        {
+            ptr_->add_ref();
+        }
     }
 
     [[nodiscard]] pointer release() noexcept
@@ -63,8 +75,7 @@ public:
     {
         if (&other != this)
         {
-            ptr_ = other.ptr_;
-            ptr_->add_ref();
+            reset(other.ptr_);
         }
 
         return *this;
@@ -72,7 +83,10 @@ public:
 
     ref_count_ptr& operator=(ref_count_ptr&& other) noexcept
     {
-        reset(other.release());
+        if (&other != this)
+        {
+            reset(other.release());
+        }
 
         return *this;
     }
@@ -80,7 +94,10 @@ public:
     template<class U>
     ref_count_ptr& operator=(ref_count_ptr<U>&& other) noexcept
     {
-        reset(other.release());
+        if (&other != this)
+        {
+            reset(other.release());
+        }
 
         return *this;
     }
@@ -88,6 +105,13 @@ public:
     inline ref_count_ptr& operator=(std::nullptr_t) noexcept
     {
         reset();
+        return *this;
+    }
+
+    inline ref_count_ptr& operator=(pointer refCountObjPtr) noexcept
+    {
+        reset(refCountObjPtr);
+        return *this;
     }
 
     inline explicit operator bool() const noexcept
@@ -112,13 +136,22 @@ public:
     {
     }
 
-    explicit ref_count_ptr(pointer refCountObjPtr) noexcept
+    ref_count_ptr(pointer refCountObjPtr) noexcept
         : ptr_(refCountObjPtr)
     {
-        ptr_->add_ref();
+        if (ptr_)
+        {
+            ptr_->add_ref();
+        }
     }
 
     ref_count_ptr(const ref_count_ptr& other) noexcept
+        : ref_count_ptr(other.ptr_)
+    {
+    }
+
+    template<class U>
+    ref_count_ptr(const ref_count_ptr<U>& other) noexcept
         : ref_count_ptr(other.ptr_)
     {
     }
