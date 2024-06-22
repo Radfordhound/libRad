@@ -59,7 +59,16 @@ public:
         std::swap(ptr_, other.ptr_);
     }
 
-    ref_count_ptr& operator=(const ref_count_ptr&) = delete;
+    ref_count_ptr& operator=(const ref_count_ptr& other) noexcept
+    {
+        if (&other != this)
+        {
+            ptr_ = other.ptr_;
+            ptr_->add_ref();
+        }
+
+        return *this;
+    }
 
     ref_count_ptr& operator=(ref_count_ptr&& other) noexcept
     {
@@ -109,7 +118,10 @@ public:
         ptr_->add_ref();
     }
 
-    ref_count_ptr(const ref_count_ptr&) = delete;
+    ref_count_ptr(const ref_count_ptr& other) noexcept
+        : ref_count_ptr(other.ptr_)
+    {
+    }
 
     ref_count_ptr(ref_count_ptr&& other) noexcept
         : ptr_(other.release())
