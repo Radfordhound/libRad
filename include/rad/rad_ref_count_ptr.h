@@ -29,6 +29,13 @@ class ref_count_ptr
         }
     }
 
+    void reset_no_add_ref_(T* refCountObjPtr) noexcept
+    {
+        release_ref_();
+        
+        ptr_ = refCountObjPtr;
+    }
+
 public:
     using pointer = T*;
     using element_type = T;
@@ -38,18 +45,14 @@ public:
         return ptr_;
     }
 
-    void reset() noexcept
+    inline void reset() noexcept
     {
-        release_ref_();
-
-        ptr_ = nullptr;
+        reset_no_add_ref_(nullptr);
     }
 
     void reset(pointer refCountObjPtr) noexcept
     {
-        release_ref_();
-
-        ptr_ = refCountObjPtr;
+        reset_no_add_ref_(refCountObjPtr);
 
         if (ptr_)
         {
@@ -57,7 +60,7 @@ public:
         }
     }
 
-    [[nodiscard]] pointer release() noexcept
+    [[nodiscard]] pointer detach() noexcept
     {
         const auto oldPtr = ptr_;
 
@@ -85,7 +88,7 @@ public:
     {
         if (&other != this)
         {
-            reset(other.release());
+            reset_no_add_ref_(other.detach());
         }
 
         return *this;
@@ -96,7 +99,7 @@ public:
     {
         if (&other != this)
         {
-            reset(other.release());
+            reset_no_add_ref_(other.detach());
         }
 
         return *this;
@@ -157,13 +160,13 @@ public:
     }
 
     ref_count_ptr(ref_count_ptr&& other) noexcept
-        : ptr_(other.release())
+        : ptr_(other.detach())
     {
     }
 
     template<class U>
     ref_count_ptr(ref_count_ptr<U>&& other) noexcept
-        : ptr_(other.release())
+        : ptr_(other.detach())
     {
     }
 
