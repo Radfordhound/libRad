@@ -86,22 +86,14 @@ public:
 
     ref_count_ptr& operator=(ref_count_ptr&& other) noexcept
     {
-        if (&other != this)
-        {
-            reset_no_add_ref_(other.detach());
-        }
-
+        reset_no_add_ref_(other.detach());
         return *this;
     }
 
     template<class U>
     ref_count_ptr& operator=(ref_count_ptr<U>&& other) noexcept
     {
-        if (&other != this)
-        {
-            reset_no_add_ref_(other.detach());
-        }
-
+        reset_no_add_ref_(other.detach());
         return *this;
     }
 
