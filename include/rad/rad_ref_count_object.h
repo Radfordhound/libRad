@@ -47,11 +47,18 @@ public:
         return (prevRefCount != 1);
     }
 
-    /// @brief Constructs a new ref_count_object.
-    /// @param startRefCountAtZero True if the reference counter should
-    /// start at 0; false if it should start at 1.
-    constexpr ref_count_object(bool startRefCountAtZero) noexcept
-        : refCount_(startRefCountAtZero ? 0 : 1)
+    /// @brief Constructs a new ref_count_object, with the
+    /// reference counter set to 0.
+    constexpr ref_count_object() noexcept
+        : refCount_(0)
+    {
+    }
+
+    /// @brief Constructs a new ref_count_object, with the
+    /// reference counter set to initialRefCount.
+    /// @param initialRefCount What value should the reference counter start at.
+    constexpr ref_count_object(std::size_t initialRefCount) noexcept
+        : refCount_(initialRefCount)
     {
     }
 };
