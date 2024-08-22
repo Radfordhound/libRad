@@ -52,12 +52,12 @@ public:
 
     void reset(pointer refCountObjPtr) noexcept
     {
-        reset_no_add_ref_(refCountObjPtr);
-
-        if (ptr_)
+        if (refCountObjPtr)
         {
-            ptr_->add_ref();
+            refCountObjPtr->add_ref();
         }
+
+        reset_no_add_ref_(refCountObjPtr);
     }
 
     [[nodiscard]] pointer detach() noexcept
