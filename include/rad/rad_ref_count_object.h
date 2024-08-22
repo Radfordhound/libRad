@@ -33,8 +33,8 @@ public:
     /// This operation is entirely atomic, and thus can be used safely
     /// across multiple threads without any additional synchronization.
     ///
-    /// @return Returns false if this was the last reference (i.e. the
-    /// reference count is now 0), and true otherwise.
+    /// @return Returns true if this was the last reference (i.e. the
+    /// reference count is now 0), and false otherwise.
     bool release_ref() const noexcept
     {
         const auto prevRefCount = refCount_.fetch_sub(1, std::memory_order_acq_rel);
@@ -44,7 +44,7 @@ public:
             "reference count was 0"
         );
 
-        return (prevRefCount != 1);
+        return (prevRefCount == 1);
     }
 
     /// @brief Constructs a new ref_count_object, with the

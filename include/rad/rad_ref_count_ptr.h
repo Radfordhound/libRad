@@ -23,7 +23,7 @@ class ref_count_ptr
 
     void release_ref_() noexcept
     {
-        if (ptr_ && !ptr_->release_ref())
+        if (ptr_ && ptr_->release_ref())
         {
             delete ptr_;
         }
