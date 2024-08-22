@@ -16,14 +16,14 @@ namespace rad
 {
 class ref_count_object
 {
-    std::atomic_size_t refCount_;
+    mutable std::atomic_size_t refCount_;
     
 public:
     /// @brief Atomically adds a reference to the reference counter.
     ///
     /// This operation is entirely atomic, and thus can be used safely
     /// across multiple threads without any additional synchronization.
-    void add_ref() noexcept
+    void add_ref() const noexcept
     {
         refCount_.fetch_add(1, std::memory_order_relaxed);
     }
@@ -35,7 +35,7 @@ public:
     ///
     /// @return Returns false if this was the last reference (i.e. the
     /// reference count is now 0), and true otherwise.
-    bool release_ref() noexcept
+    bool release_ref() const noexcept
     {
         const auto prevRefCount = refCount_.fetch_sub(1, std::memory_order_acq_rel);
 
