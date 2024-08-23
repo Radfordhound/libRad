@@ -11,9 +11,20 @@
 #ifndef RAD_PCH_IMPL_H_INCLUDED
 #define RAD_PCH_IMPL_H_INCLUDED
 
+// POSIX defines
+#ifndef _WIN32
+    #define _DARWIN_USE_64_BIT_INODE 1
+    #define _FILE_OFFSET_BITS 64
+    #define _LARGEFILE64_SOURCE 1
+#endif
+
 // Standard library includes
 #include <new>
+#include <stdexcept>
+#include <system_error>
+#include <cstring>
 #include <cassert>
+#include <cerrno>
 
 // Windows platform includes
 #ifdef _WIN32
