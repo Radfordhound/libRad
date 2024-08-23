@@ -7,6 +7,7 @@
 #ifndef RAD_VECTOR_H_INCLUDED
 #define RAD_VECTOR_H_INCLUDED
 
+#include "rad_base.h"
 #include "rad_pair.h"
 #include "rad_default_allocator.h"
 #include "rad_allocator_traits.h"
@@ -39,6 +40,14 @@ class vector
 
     pair<Allocator, values_t_>    data_;
 
+    static constexpr bool must_call_allocator_destroy_on_elements_() noexcept
+    {
+        return (
+            !std::is_trivially_destructible_v<T> ||
+            allocator_traits_::has_destroy
+        );
+    }
+
     constexpr const Allocator& allocator_() const noexcept
     {
         return data_.first();
@@ -59,12 +68,14 @@ class vector
         return data_.second();
     }
 
-    static constexpr bool must_call_allocator_destroy_on_elements_() noexcept
+    void validate_range_(size_type_ index) const
     {
-        return (
-            !std::is_trivially_destructible_v<T> ||
-            allocator_traits_::has_destroy
-        );
+        if (index >= size())
+        {
+            throw std::out_of_range(
+                "The given index was outside of the vector's range"
+            );
+        }
     }
 
     size_type_ compute_new_capacity_(size_type_ newDataCount) const noexcept
@@ -84,7 +95,8 @@ class vector
         // not sufficient.
         return std::max<size_type_>(
             bufCount + (bufCount / 2),
-            newDataCount);
+            newDataCount
+        );
     }
 
     template<typename... Args>
@@ -111,9 +123,14 @@ class vector
     void reallocate_(size_type_ oldDataCount, size_type_ oldCapacity, size_type_ newCapacity)
     {
         auto& v = values_();
+
         v.dataBegin = allocator_traits_::reallocate(
-            allocator_(), v.dataBegin, oldDataCount, oldCapacity,
-            newCapacity);
+            allocator_(),
+            v.dataBegin,
+            oldDataCount,
+            oldCapacity,
+            newCapacity
+        );
 
         v.dataEnd = (v.dataBegin + oldDataCount);
         v.bufEnd = (v.dataBegin + newCapacity);
@@ -127,7 +144,6 @@ class vector
     void destroy_data_()
     {
         // Destruct elements if necessary.
-
         // NOTE: This is safe even if dataBegin and dataEnd are both nullptr.
 
         auto& allocator = allocator_();
@@ -277,25 +293,11 @@ public:
 
     iterator erase(const_iterator pos)
     {
-        // 1 2 3 4
-        //   ^
-        // ^      ^
-        //        ^
-
-        // 1 3 4 $
-        //       ^
-
-        // 1 3 4 $
-        //   ^
-        // ^     ^ ^
-
-        // 1 2 3 4
-        //       ^
-
         const auto it = move_strong(
             const_cast<iterator>(pos + 1),
             end(),
-            const_cast<iterator>(pos));
+            const_cast<iterator>(pos)
+        );
 
         if constexpr (must_call_allocator_destroy_on_elements_())
         {
@@ -333,15 +335,23 @@ public:
 
     inline const_reference operator[](size_type pos) const noexcept
     {
+    #if RAD_USE_STRICT_BOUNDS_CHECKING == 1
+        validate_range_(pos);
+    #endif
+
         return data()[pos];
     }
 
     inline reference operator[](size_type pos) noexcept
     {
+    #if RAD_USE_STRICT_BOUNDS_CHECKING == 1
+        validate_range_(pos);
+    #endif
+
         return data()[pos];
     }
 
-    vector& operator=(const vector& other) = delete;
+    vector& operator=(const vector& other) = delete; // TODO
 
     // TODO: Handle propagate_on_container_move_assignment properly!!!
     vector& operator=(vector&& other) noexcept

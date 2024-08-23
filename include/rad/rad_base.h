@@ -50,4 +50,13 @@
     #define RAD_USE_OPERATOR_NEW_DELETE_REPLACEMENTS 1
 #endif
 
+// Strict bounds checking
+#ifndef RAD_USE_STRICT_BOUNDS_CHECKING
+    #ifndef NDEBUG
+        #define RAD_USE_STRICT_BOUNDS_CHECKING 1
+    #else
+        #define RAD_USE_STRICT_BOUNDS_CHECKING 0
+    #endif
+#endif
+
 #endif

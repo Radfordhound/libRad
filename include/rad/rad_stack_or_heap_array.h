@@ -7,8 +7,10 @@
 #ifndef RAD_STACK_OR_HEAP_ARRAY_H_INCLUDED
 #define RAD_STACK_OR_HEAP_ARRAY_H_INCLUDED
 
+#include "rad_base.h"
 #include "rad_stack_or_heap_memory.h"
 #include "rad_object_utils.h"
+#include <cstddef>
 #include <utility>
 
 namespace rad
@@ -23,6 +25,17 @@ class stack_or_heap_array
 
     std::size_t     count_ = 0;
     buffer_type_    buffer_;
+
+    void validate_range_(std::size_t index) const
+    {
+        if (index >= count_)
+        {
+            throw std::out_of_range(
+                "The given index was outside of the "
+                "stack_or_heap_array's range"
+            );
+        }
+    }
 
     void clear_() noexcept
     {
@@ -93,11 +106,19 @@ public:
 
     inline const T& operator[](std::size_t index) const
     {
+    #if RAD_USE_STRICT_BOUNDS_CHECKING == 1
+        validate_range_(index);
+    #endif
+
         return *(begin() + index);
     }
 
     inline T& operator[](std::size_t index)
     {
+    #if RAD_USE_STRICT_BOUNDS_CHECKING == 1
+        validate_range_(index);
+    #endif
+
         return *(begin() + index);
     }
 
