@@ -76,11 +76,11 @@ set(RAD_PCH_PATH "${RAD_SOURCE_DIR}/rad_pch_impl.h")
 # Add platform-specific sources
 if(WIN32)
     list(APPEND RAD_SOURCES
-        "${RAD_SOURCE_DIR}/rad_memory_win32.cpp"
+        "${RAD_SOURCE_DIR}/platform/win32/rad_memory_impl_win32.cpp"
     )
 else()
     list(APPEND RAD_SOURCES
-        "${RAD_SOURCE_DIR}/rad_memory_posix.cpp"
+        "${RAD_SOURCE_DIR}/platform/posix/rad_memory_impl_posix.cpp"
     )
 endif()
 
