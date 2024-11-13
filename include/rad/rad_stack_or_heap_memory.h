@@ -175,10 +175,15 @@ public:
         // NOTE: In the event that size <= Size, we don't have to do anything.
     }
 
-    void deallocate() noexcept
+    void set_internal_pointer(void* ptr) noexcept
     {
         deallocate_();
-        data_ = stackMemory_;
+        data_ = ptr;
+    }
+
+    inline void deallocate() noexcept
+    {
+        set_internal_pointer(stackMemory_);
     }
 
     template<typename T = void>
