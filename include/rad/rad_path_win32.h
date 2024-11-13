@@ -47,7 +47,7 @@ RAD_API std::string_view get_extensions_win32(std::string_view path) noexcept;
 
 RAD_API std::string_view get_parent_win32(std::string_view path) noexcept;
 
-RAD_API bool append_win32(std::string& path, std::string_view component);
+RAD_API bool append_win32(std::string& path, std::string_view subpath);
 
 RAD_API std::string combine_win32(std::string_view path1, std::string_view path2);
 

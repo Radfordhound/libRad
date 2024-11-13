@@ -111,12 +111,12 @@ inline std::string_view get_parent(std::string_view path) noexcept
 #endif
 }
 
-inline bool append(std::string& path, std::string_view component)
+inline bool append(std::string& path, std::string_view subpath)
 {
 #if RAD_PATH_IS_WIN32_TARGET == 1
-    return append_win32(path, component);
+    return append_win32(path, subpath);
 #else
-    return append_unix(path, component);
+    return append_unix(path, subpath);
 #endif
 }
 

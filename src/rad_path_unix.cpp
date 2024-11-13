@@ -120,14 +120,14 @@ static std::size_t get_leading_separator_count_unix_(std::string_view str)
     return len;
 }
 
-bool append_unix(std::string& path, std::string_view component)
+bool append_unix(std::string& path, std::string_view subpath)
 {
-    if (!component.empty())
+    if (!subpath.empty())
     {
         const bool needsSep = !has_trailing_separator_unix(path);
-        component.remove_prefix(get_leading_separator_count_unix_(component));
+        subpath.remove_prefix(get_leading_separator_count_unix_(subpath));
 
-        const std::size_t appendLen = (needsSep + component.size());
+        const std::size_t appendLen = (needsSep + subpath.size());
 
         if (appendLen)
         {
@@ -138,7 +138,7 @@ bool append_unix(std::string& path, std::string_view component)
                 path += '/';
             }
 
-            path += component;
+            path += subpath;
             return true;
         }
     }

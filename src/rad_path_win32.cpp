@@ -151,14 +151,14 @@ static std::size_t get_leading_separator_count_win32_(std::string_view str)
     return len;
 }
 
-bool append_win32(std::string& path, std::string_view component)
+bool append_win32(std::string& path, std::string_view subpath)
 {
-    if (!component.empty())
+    if (!subpath.empty())
     {
-        const bool needsSep = !has_trailing_separator_win32(path);
-        component.remove_prefix(get_leading_separator_count_win32_(component));
+        const bool needsSep = (!path.empty() && !has_trailing_separator_win32(path));
+        subpath.remove_prefix(get_leading_separator_count_win32_(subpath));
 
-        const std::size_t appendLen = (needsSep + component.size());
+        const std::size_t appendLen = (needsSep + subpath.size());
 
         if (appendLen)
         {
@@ -169,7 +169,7 @@ bool append_win32(std::string& path, std::string_view component)
                 path += '\\';
             }
 
-            path += component;
+            path += subpath;
             return true;
         }
     }
@@ -181,7 +181,7 @@ std::string combine_win32(std::string_view path1, std::string_view path2)
 {
     if (!path2.empty())
     {
-        const bool needsSep = !has_trailing_separator_win32(path1);
+        const bool needsSep = (!path1.empty() && !has_trailing_separator_win32(path1));
         path2.remove_prefix(get_leading_separator_count_win32_(path2));
 
         const std::size_t appendLen = (needsSep + path2.size());
