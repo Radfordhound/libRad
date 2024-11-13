@@ -162,7 +162,7 @@ bool append_win32(std::string& path, std::string_view component)
 
         if (appendLen)
         {
-            path.reserve(path.capacity() + appendLen);
+            path.reserve(path.size() + appendLen);
 
             if (needsSep)
             {
