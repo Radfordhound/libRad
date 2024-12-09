@@ -32,24 +32,6 @@
     #endif
 #endif
 
-// Debug memory allocation
-// NOTE: If this value is not set to 1 while compiling libRad,
-// debug memory allocation functions will not be available!
-#ifndef RAD_USE_DEBUG_MEMORY
-    #ifndef NDEBUG
-        #define RAD_USE_DEBUG_MEMORY 1
-    #else
-        #define RAD_USE_DEBUG_MEMORY 0
-    #endif
-#endif
-
-// Operator new/delete replacements
-#ifndef RAD_USE_OPERATOR_NEW_DELETE_REPLACEMENTS
-    // NOTE: If this value is not defined while compiling libRad,
-    // it will fallback to its default value of 1!
-    #define RAD_USE_OPERATOR_NEW_DELETE_REPLACEMENTS 1
-#endif
-
 // Strict bounds checking
 #ifndef RAD_USE_STRICT_BOUNDS_CHECKING
     #ifndef NDEBUG

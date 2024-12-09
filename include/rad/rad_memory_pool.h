@@ -8,7 +8,6 @@
 #define RAD_MEMORY_POOL_H_INCLUDED
 
 #include "rad_memory.h"
-#include "rad_object_utils.h"
 #include "rad_vector.h"
 #include <memory>
 #include <utility>
@@ -40,7 +39,7 @@ namespace detail_
         memory_pool_block() noexcept = default;
 
         memory_pool_block(std::size_t elementCount)
-            : elements_(RAD_NEW(unsigned char)[sizeof(memory_pool_element<T>) * elementCount])
+            : elements_(new unsigned char[sizeof(memory_pool_element<T>) * elementCount])
         {
             // Validate arguments.
             assert((elementCount > 0) &&

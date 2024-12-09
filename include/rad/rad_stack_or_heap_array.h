@@ -8,25 +8,30 @@
 #define RAD_STACK_OR_HEAP_ARRAY_H_INCLUDED
 
 #include "rad_base.h"
-#include "rad_stack_or_heap_memory.h"
-#include "rad_object_utils.h"
+#include "rad_default_allocator.h"
+#include "rad_memory.h"
 #include <cstddef>
+#include <memory>
 #include <utility>
 
 namespace rad
 {
-// TODO: Add allocator.
 template<typename T, std::size_t MaxStackCount>
 class stack_or_heap_array
 {
-    using buffer_type_ = stack_or_heap_memory<
-        sizeof(T) * MaxStackCount,
-        alignof(T)>;
+    using size_type_ = std::size_t;
 
-    std::size_t     count_ = 0;
-    buffer_type_    buffer_;
+    rad::allocator*     allocator_ = &default_allocator;
+    size_type_          count_ = 0;
+    T*                  data_;
 
-    void validate_range_(std::size_t index) const
+    union
+    {
+        T               stackData_[MaxStackCount];
+        char            dummy_;
+    };
+
+    void validate_range_(size_type_ index) const
     {
         if (index >= count_)
         {
@@ -37,15 +42,88 @@ class stack_or_heap_array
         }
     }
 
-    void clear_() noexcept
+    void free_() noexcept
     {
-        // Destruct any existing elements and free any existing heap memory.
-        destruct(begin(), end());
+        if (is_heap())
+        {
+            allocator_->free(data_);
+        }
+    }
+
+    T* allocate_(size_type_ count)
+    {
+        if (count > MaxStackCount)
+        {
+            return static_cast<T*>(allocator_->allocate(
+                sizeof(T) * count,
+                alignof(T)
+            ));
+        }
+        else
+        {
+            return stackData_;
+        }
+    }
+
+    T* reallocate_(size_type_ count)
+    {
+        rad::destruct(begin(), end());
         count_ = 0;
-        buffer_.deallocate_(); // NOTE: This does NOT reset the buffer_.data_ pointer!
+
+        if (is_heap())
+        {
+            return static_cast<T*>(allocator_->reallocate(
+                data_,
+                sizeof(T) * count,
+                alignof(T)
+            ));
+        }
+        else
+        {
+            return allocate_(count);
+        }
+    }
+
+    void destroy_data_() noexcept
+    {
+        rad::destruct(begin(), end());
+        free_();
+    }
+
+    void copy_data_(const stack_or_heap_array& other)
+    {
+        data_ = allocate_(other.count_);
+
+        try
+        {
+            std::uninitialized_copy(other.begin(), other.end(), data_);
+        }
+        catch (...)
+        {
+            free_();
+            throw;
+        }
     }
 
 public:
+    using value_type            = T;
+    using allocator_type        = rad::allocator;
+    using size_type             = size_type_;
+    using difference_type       = std::ptrdiff_t;
+    using reference             = value_type&;
+    using const_reference       = const value_type&;
+    using pointer               = value_type*;
+    using const_pointer         = const value_type*;
+    using iterator              = pointer;
+    using const_iterator        = const_pointer;
+    // TODO: reverse_iterator
+    // TODO: const_reverse_iterator
+
+    constexpr allocator_type& allocator() const noexcept
+    {
+        return *allocator_;
+    }
+
     inline std::size_t size() const noexcept
     {
         return count_;
@@ -53,103 +131,127 @@ public:
 
     inline const T* data() const noexcept
     {
-        return buffer_.template data<T>();
+        return data_;
     }
 
     inline T* data() noexcept
     {
-        return buffer_.template data<T>();
+        return data_;
+    }
+
+    inline bool is_heap() const noexcept
+    {
+        return data_ != stackData_;
     }
 
     inline const T* begin() const noexcept
     {
-        return buffer_.template data<T>();
+        return data_;
     }
 
     inline T* begin() noexcept
     {
-        return buffer_.template data<T>();
+        return data_;
     }
 
     inline const T* end() const noexcept
     {
-        return (buffer_.template data<T>() + count_);
+        return data_ + count_;
     }
 
     inline T* end() noexcept
     {
-        return (buffer_.template data<T>() + count_);
+        return data_ + count_;
     }
 
-    inline void clear() noexcept
+    void clear() noexcept
     {
-        clear_();
-        buffer_.data_ = buffer_.stackMemory_;
+        destroy_data_();
+
+        count_ = 0;
+        data_ = stackData_;
+    }
+
+    void assign(no_value_init_t, size_type count)
+    {
+        data_ = reallocate_(count);
+
+        std::uninitialized_default_construct(data_, data_ + count);
+        count_ = count;
     }
 
     template<typename... Args>
-    void assign(std::size_t count, const Args&... args)
+    void assign(size_type count, const Args&... args)
     {
-        // Destruct any existing elements.
-        destruct(begin(), end());
-        count_ = 0;
+        data_ = reallocate_(count);
 
-        // Reallocate memory block, not preserving existing data.
-        buffer_.reallocate(sizeof(T) * count, false);
-
-        // Direct-construct new elements, and set new count.
-        uninitialized_direct_construct(begin(), begin() + count, args...);
+        uninitialized_direct_construct(data_, data_ + count, args...);
         count_ = count;
     }
 
     // TODO: Add other overloads of assign.
 
     inline const T& operator[](std::size_t index) const
+        noexcept(!RAD_USE_STRICT_BOUNDS_CHECKING)
     {
-    #if RAD_USE_STRICT_BOUNDS_CHECKING == 1
+    #if RAD_USE_STRICT_BOUNDS_CHECKING
         validate_range_(index);
     #endif
 
-        return *(begin() + index);
+        return data_[index];
     }
 
     inline T& operator[](std::size_t index)
+        noexcept(!RAD_USE_STRICT_BOUNDS_CHECKING)
     {
-    #if RAD_USE_STRICT_BOUNDS_CHECKING == 1
+    #if RAD_USE_STRICT_BOUNDS_CHECKING
         validate_range_(index);
     #endif
 
-        return *(begin() + index);
+        return data_[index];
     }
 
-    // TODO: copy operator=
-
-    stack_or_heap_array& operator=(stack_or_heap_array&& other)
-        noexcept(noexcept(uninitialized_move_strong(
-            std::declval<T*>(), std::declval<T*>(),
-            std::declval<T*>())))
+    stack_or_heap_array& operator=(const stack_or_heap_array& other)
     {
         if (&other != this)
         {
-            // Reset the array without setting a new buffer_.data_ pointer.
-            clear_();
+            clear();
 
-            // If the other array is using heap memory, just take ownership of its data pointer.
-            if (other.buffer_.is_heap())
+            allocator_ = other.allocator_;
+
+            copy_data_(other);
+            count_ = other.count_;
+        }
+
+        return *this;
+    }
+
+    stack_or_heap_array& operator=(stack_or_heap_array&& other)
+        noexcept(noexcept(
+            uninitialized_move_strong(
+                std::declval<pointer>(),
+                std::declval<pointer>(),
+                std::declval<pointer>()
+            )
+        ))
+    {
+        if (&other != this)
+        {
+            clear();
+
+            if (other.is_heap())
             {
-                buffer_.data_ = other.buffer_.data_;
-                other.buffer_.data_ = other.buffer_.stackMemory_;
+                data_ = other.data_;
+                other.data_ = other.stackData_;
             }
-
-            // If the other array is using stack memory, move its elements into our stack memory
-            // and destruct the now-empty elements in the existing array.
             else
             {
-                buffer_.data_ = buffer_.stackMemory_;
-                uninitialized_move_strong(other.begin(), other.end(), begin());
-                destruct(other.begin(), other.end());
+                // NOTE: data_ is already set to stackData_ here due to the clear call above.
+                uninitialized_move_strong(other.begin(), other.end(), stackData_);
+                rad::destruct(other.begin(), other.end());
             }
 
+            allocator_ = other.allocator_;
             count_ = other.count_;
             other.count_ = 0;
         }
@@ -157,55 +259,126 @@ public:
         return *this;
     }
 
-    stack_or_heap_array() noexcept = default;
+    stack_or_heap_array() noexcept
+        : data_(stackData_)
+    {
+    }
+
+    explicit stack_or_heap_array(rad::allocator& allocator) noexcept
+        : allocator_(&allocator)
+        , data_(stackData_)
+    {
+    }
+
+    explicit stack_or_heap_array(
+        no_value_init_t,
+        rad::allocator& allocator,
+        std::size_t count)
+        : allocator_(&allocator)
+        , count_(count)
+        , data_(allocate_(count))
+    {
+        try
+        {
+            std::uninitialized_default_construct(begin(), end());
+        }
+        catch (...)
+        {
+            free_();
+            throw;
+        }
+    }
+
+    explicit stack_or_heap_array(no_value_init_t, std::size_t count)
+        : count_(count)
+        , data_(allocate_(count))
+    {
+        try
+        {
+            std::uninitialized_default_construct(begin(), end());
+        }
+        catch (...)
+        {
+            free_();
+            throw;
+        }
+    }
 
     template<typename... Args>
-    stack_or_heap_array(std::size_t count, const Args&... args)
-        : count_(count)
-        , buffer_(sizeof(T) * count)
+    explicit stack_or_heap_array(
+        rad::allocator& allocator,
+        size_type count,
+        const Args&... args)
+        : allocator_(&allocator)
+        , count_(count)
+        , data_(allocate_(count))
     {
-        uninitialized_direct_construct(begin(), end(), args...);
+        try
+        {
+            uninitialized_direct_construct(begin(), end(), args...);
+        }
+        catch (...)
+        {
+            free_();
+            throw;
+        }
+    }
+
+    template<typename... Args>
+    explicit stack_or_heap_array(size_type count, const Args&... args)
+        : count_(count)
+        , data_(allocate_(count))
+    {
+        try
+        {
+            uninitialized_direct_construct(begin(), end(), args...);
+        }
+        catch (...)
+        {
+            free_();
+            throw;
+        }
     }
 
     // TODO: Add iterator constructor.
 
     stack_or_heap_array(const stack_or_heap_array& other)
-        : count_(other.count_)
-        , buffer_(sizeof(T) * other.count_)
+        : allocator_(other.allocator_)
+        , count_(other.count_)
     {
-        std::uninitialized_copy(other.begin(), other.end(), begin());
+        copy_data_(other);
     }
 
     stack_or_heap_array(stack_or_heap_array&& other)
-        noexcept(noexcept(uninitialized_move_strong(
-            std::declval<T*>(), std::declval<T*>(),
-            std::declval<T*>())))
+        noexcept(noexcept(
+            uninitialized_move_strong(
+                std::declval<pointer>(),
+                std::declval<pointer>(),
+                std::declval<pointer>()
+            )
+        ))
 
-        : count_(other.count_)
+        : allocator_(other.allocator_)
+        , count_(other.count_)
     {
-        // If the other array is using heap memory, just take ownership of its data pointer.
-        if (other.buffer_.is_heap())
+        if (other.is_heap())
         {
-            buffer_.data_ = other.buffer_.data_;
-            other.buffer_.data_ = other.buffer_.stackMemory_;
+            data_ = other.data_;
+            other.data_ = other.stackData_;
         }
-
-        // If the other array is using stack memory, move its elements into our stack memory
-        // and destruct the now-empty elements in the existing array.
         else
         {
-            // NOTE: buffer_.data_ is already set to buffer_.stackMemory_ here thanks to
-            // stack_or_heap_memory's default constructor.
-            uninitialized_move_strong(other.begin(), other.end(), begin());
-            destruct(other.begin(), other.end());
+            data_ = stackData_;
+            uninitialized_move_strong(other.begin(), other.end(), stackData_);
+            rad::destruct(other.begin(), other.end());
         }
 
         other.count_ = 0;
     }
 
-    ~stack_or_heap_array()
+    inline ~stack_or_heap_array()
     {
-        destruct(begin(), end());
+        destroy_data_();
     }
 };
 }

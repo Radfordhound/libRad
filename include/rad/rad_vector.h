@@ -8,64 +8,58 @@
 #define RAD_VECTOR_H_INCLUDED
 
 #include "rad_base.h"
-#include "rad_pair.h"
 #include "rad_default_allocator.h"
-#include "rad_allocator_traits.h"
+#include "rad_memory.h"
+#include <cstddef>
+#include <cassert>
 #include <type_traits>
 #include <limits>
 #include <algorithm>
-#include <cstddef>
+#include <stdexcept>
 
 namespace rad
 {
-template<typename T, class Allocator = default_allocator<T>>
+/// @brief A resizable list of elements, like `std::vector`, but
+/// with several additions/improvements.
+///
+/// @details Some of the changes include:
+///
+/// - Uses a `rad::allocator` for memory allocation instead of the STL allocator approach.
+///
+/// - Does reallocation through the `rad::allocator`, allowing for realloc optimizations
+///   where applicable (e.g. growing/shrinking the memory block without a new allocation).
+///
+/// - Has a `release` function, which allows you to take ownership of the vector's buffer.
+///
+/// - Has a `no_value_init` variant of the default constructor, which allows for
+///   default-construction of elements (instead of value-construction).
+///
+/// - Uses strict bounds checking in all indexing operations if
+///   `RAD_USE_STRICT_BOUNDS_CHECKING` is defined to 1.
+///
+/// - Has a `no_value_init` variant of the push_back function, which allows for a
+///   default-constructed element to be pushed back (instead of a value-constructed element).
+///
+/// @tparam T The value type of the vector.
+template<typename T>
 class vector
 {
-    using allocator_traits_ = allocator_traits<Allocator>;
-    using size_type_        = typename allocator_traits_::size_type;
+    using size_type_ = std::size_t;
 
-    struct values_t_
+    rad::allocator* allocator_ = &default_allocator;
+    T*              dataBegin_ = nullptr;
+    T*              dataEnd_ = nullptr;
+    T*              bufEnd_ = nullptr;
+
+    void destroy_data_() noexcept
     {
-        T*  dataBegin;
-        T*  dataEnd;
-        T*  bufEnd;
-
-        constexpr void reset() noexcept
-        {
-            dataBegin = nullptr;
-            dataEnd = nullptr;
-            bufEnd = nullptr;
-        }
-    };
-
-    pair<Allocator, values_t_>    data_;
-
-    static constexpr bool must_call_allocator_destroy_on_elements_() noexcept
-    {
-        return (
-            !std::is_trivially_destructible_v<T> ||
-            allocator_traits_::has_destroy
-        );
+        // NOTE: This is safe even if dataBegin and dataEnd are both nullptr.
+        allocator_->destroy(dataBegin_, size());
     }
 
-    constexpr const Allocator& allocator_() const noexcept
+    void reset_() noexcept
     {
-        return data_.first();
-    }
-
-    constexpr Allocator& allocator_() noexcept
-    {
-        return data_.first();
-    }
-
-    constexpr const values_t_& values_() const noexcept
-    {
-        return data_.second();
-    }
-
-    constexpr values_t_& values_() noexcept
-    {
-        return data_.second();
+        dataBegin_ = dataEnd_ = bufEnd_ = nullptr;
     }
 
     void validate_range_(size_type_ index) const
@@ -99,158 +93,115 @@ class vector
         );
     }
 
-    template<typename... Args>
-    void init_with_direct_construct_(size_type_ count, const Args&... args)
+    void reallocate_(
+        size_type_ oldCount,
+        size_type_ newCapacity)
     {
-        // Allocate memory.
-        auto& v = values_();
-
-        v.dataBegin = allocator_traits_::allocate(allocator_(), count);
-        v.bufEnd = v.dataEnd = (v.dataBegin + count);
-
-        // Direct-construct elements.
-        try
-        {
-            uninitialized_direct_construct(v.dataBegin, v.dataEnd, args...);
-        }
-        catch (...)
-        {
-            allocator_traits_::deallocate(allocator_(), v.dataBegin, count);
-            throw;
-        }
-    }
-
-    void reallocate_(size_type_ oldDataCount, size_type_ oldCapacity, size_type_ newCapacity)
-    {
-        auto& v = values_();
-
-        v.dataBegin = allocator_traits_::reallocate(
-            allocator_(),
-            v.dataBegin,
-            oldDataCount,
-            oldCapacity,
+        dataBegin_ = allocator_->resize(
+            no_default_init,
+            dataBegin_,
+            oldCount,
             newCapacity
         );
 
-        v.dataEnd = (v.dataBegin + oldDataCount);
-        v.bufEnd = (v.dataBegin + newCapacity);
+        dataEnd_ = dataBegin_ + oldCount;
+        bufEnd_ = dataBegin_ + newCapacity;
     }
 
-    inline void reallocate_(size_type_ newCapacity)
+    void reserve_for_one_()
     {
-        reallocate_(size(), capacity(), newCapacity);
-    }
-
-    void destroy_data_()
-    {
-        // Destruct elements if necessary.
-        // NOTE: This is safe even if dataBegin and dataEnd are both nullptr.
-
-        auto& allocator = allocator_();
-
-        if constexpr (must_call_allocator_destroy_on_elements_())
+        if (dataEnd_ == bufEnd_)
         {
-            const auto& v = values_();
+            const auto oldCount = size();
+            const auto newCapacity = compute_new_capacity_(oldCount + 1);
 
-            for (auto it = v.dataBegin; it != v.dataEnd; ++it)
-            {
-                allocator_traits_::destroy(allocator, it);
-            }
+            reallocate_(oldCount, newCapacity);
         }
-
-        // Deallocate memory.
-        allocator_traits_::deallocate(allocator, data(), size());
     }
 
 public:
     using value_type            = T;
-    using allocator_type        = Allocator;
+    using allocator_type        = rad::allocator;
     using size_type             = size_type_;
-    using difference_type       = typename allocator_traits_::difference_type;
+    using difference_type       = std::ptrdiff_t;
     using reference             = value_type&;
     using const_reference       = const value_type&;
-    using pointer               = typename allocator_traits_::pointer;
-    using const_pointer         = typename allocator_traits_::const_pointer;
-    using iterator              = value_type*; // TODO: Should we use pointer instead?
-    using const_iterator        = const value_type*; // TODO: Should we use const_pointer instead?
+    using pointer               = value_type*;
+    using const_pointer         = const value_type*;
+    using iterator              = pointer;
+    using const_iterator        = const_pointer;
     // TODO: reverse_iterator
     // TODO: const_reverse_iterator
 
-    constexpr allocator_type get_allocator() const noexcept
-    {
-        return allocator_();
-    }
+    static constexpr bool has_trivially_destructible_elements =
+        std::is_trivially_destructible_v<T>;
 
-    constexpr const allocator_type& allocator() const noexcept
+    inline allocator_type& allocator() const noexcept
     {
-        return allocator_();
+        return *allocator_;
     }
 
     inline const T* data() const noexcept
     {
-        return values_().dataBegin;
+        return dataBegin_;
     }
 
     inline T* data() noexcept
     {
-        return values_().dataBegin;
+        return dataBegin_;
     }
 
     inline size_type size() const noexcept
     {
-        return (end() - begin());
+        return dataEnd_ - dataBegin_;
     }
 
     inline size_type capacity() const noexcept
     {
-        return (values_().bufEnd - begin());
+        return bufEnd_ - dataBegin_;
     }
 
     constexpr size_type max_size() const noexcept
     {
-        // The smallest of the following:
-        // - The maximum possible value of difference_type
-        // - The maximum count of elements of type T that can be allocated by allocator_traits_
-
         return std::min<size_type>(
             (std::numeric_limits<difference_type>::max)(),
-            allocator_traits_::max_size(allocator_())
+            (std::numeric_limits<size_type>::max)()
         );
     }
 
     [[nodiscard]] inline bool empty() const noexcept
     {
-        return (begin() == end());
+        return dataBegin_ == dataEnd_;
     }
 
     inline const_iterator cbegin() const noexcept
     {
-        return values_().dataBegin;
+        return dataBegin_;
     }
 
     inline const_iterator begin() const noexcept
     {
-        return values_().dataBegin;
+        return dataBegin_;
     }
 
     inline iterator begin() noexcept
     {
-        return values_().dataBegin;
+        return dataBegin_;
     }
 
     inline const_iterator cend() const noexcept
     {
-        return values_().dataEnd;
+        return dataEnd_;
     }
 
     inline const_iterator end() const noexcept
     {
-        return values_().dataEnd;
+        return dataEnd_;
     }
 
     inline iterator end() noexcept
     {
-        return values_().dataEnd;
+        return dataEnd_;
     }
 
     void reserve(size_type newCapacity)
@@ -259,7 +210,7 @@ public:
 
         if (newCapacity > oldCapacity)
         {
-            reallocate_(size(), oldCapacity, newCapacity);
+            reallocate_(size(), newCapacity);
         }
     }
 
@@ -267,18 +218,25 @@ public:
     reference emplace_back(Args&&... args)
     {
         // Reallocate if necessary.
-        auto& v = values_();
-        if (v.dataEnd == v.bufEnd)
-        {
-            const auto oldDataCount = size();
-            const auto newCapacity = compute_new_capacity_(oldDataCount + 1);
-
-            reallocate_(oldDataCount, capacity(), newCapacity);
-        }
+        reserve_for_one_();
 
         // Construct new element.
-        ::new (v.dataEnd) T(std::forward<Args>(args)...);
-        return *(v.dataEnd++);
+        ::new (dataEnd_) T(std::forward<Args>(args)...);
+        return *(dataEnd_++);
+    }
+
+    reference push_back(no_value_init_t)
+    {
+        // Reallocate if necessary.
+        reserve_for_one_();
+
+        // Default-construct new element if necessary.
+        if constexpr (!std::is_trivially_default_constructible_v<T>)
+        {
+            ::new (dataEnd_) T();
+        }
+
+        return *(dataEnd_++);
     }
 
     inline reference push_back(const T& val)
@@ -295,63 +253,105 @@ public:
     {
         const auto it = move_strong(
             const_cast<iterator>(pos + 1),
-            end(),
+            dataEnd_,
             const_cast<iterator>(pos)
         );
 
-        if constexpr (must_call_allocator_destroy_on_elements_())
-        {
-            allocator_traits_::destroy(allocator_(), it);
-        }
-
-        values_().dataEnd = it;
+        rad::destruct(*it);
+        dataEnd_ = it;
         
         return const_cast<iterator>(pos);
     }
 
     // TODO: Range erase
 
+    void pop_back()
+    {
+        assert(dataEnd_ != dataBegin_ &&
+            "Cannot call pop_back() on an empty vector!"
+        );
+
+        rad::destruct(--dataEnd_);
+    }
+
     void clear() noexcept
     {
         destroy_data_();
-        values_().reset();
+        reset_();
     }
 
     /// @brief Releases ownership of the data buffer
-    /// to the caller and resets the vector.
+    /// to the caller and clears the vector.
     /// 
-    /// After calling this function, it is the caller's
-    /// responsibility to destruct the elements within the
-    /// data buffer if necessary and to deallocate the memory
-    /// using the allocator's deallocate function or equivalent.
+    /// @details After calling this function, it is the caller's
+    /// responsibility to destruct the elements within the data buffer
+    /// (unless `has_trivially_destructible_elements` is true), and to
+    /// deallocate the memory using the allocator's free function
+    /// (or equivalent).
+    ///
+    /// All of this can be done using the allocator's `destroy`
+    /// helper function.
     /// 
     /// @return pointer A pointer to the data buffer, no longer owned by the vector.
-    pointer release() noexcept
+    [[nodiscard]] pointer release() noexcept
     {
-        const auto dataBuf = data();
-        values_().reset();
+        const auto dataBuf = dataBegin_;
+        reset_();
         return dataBuf;
     }
 
-    inline const_reference operator[](size_type pos) const noexcept
+    const_reference at(size_type pos) const
     {
-    #if RAD_USE_STRICT_BOUNDS_CHECKING == 1
+        validate_range_(pos);
+        return dataBegin_[pos];
+    }
+
+    reference at(size_type pos)
+    {
+        validate_range_(pos);
+        return dataBegin_[pos];
+    }
+
+    inline const_reference operator[](size_type pos) const
+        noexcept(!RAD_USE_STRICT_BOUNDS_CHECKING)
+    {
+    #if RAD_USE_STRICT_BOUNDS_CHECKING
         validate_range_(pos);
     #endif
 
-        return data()[pos];
+        return dataBegin_[pos];
     }
 
-    inline reference operator[](size_type pos) noexcept
+    inline reference operator[](size_type pos)
+        noexcept(!RAD_USE_STRICT_BOUNDS_CHECKING)
     {
-    #if RAD_USE_STRICT_BOUNDS_CHECKING == 1
+    #if RAD_USE_STRICT_BOUNDS_CHECKING
         validate_range_(pos);
     #endif
 
-        return data()[pos];
+        return dataBegin_[pos];
     }
 
-    vector& operator=(const vector& other) = delete; // TODO
+    // TODO: Handle propagate_on_container_copy_assignment properly!!!
+    vector& operator=(const vector& other)
+    {
+        if (&other != this)
+        {
+            const auto otherCount = other.size();
+            const auto newPtr = other.allocator_->create_copy<T>(
+                other.dataBegin_,
+                otherCount
+            );
+
+            clear();
+
+            allocator_ = other.allocator_;
+            dataBegin_ = newPtr;
+            bufEnd_ = dataEnd_ = newPtr + otherCount;
+        }
+        
+        return *this;
+    }
 
     // TODO: Handle propagate_on_container_move_assignment properly!!!
     vector& operator=(vector&& other) noexcept
@@ -360,56 +360,71 @@ public:
         {
             destroy_data_();
 
-            data_ = std::move(data_);
-            other.values_().reset();
+            allocator_ = other.allocator_;
+            dataBegin_ = other.dataBegin_;
+            dataEnd_ = other.dataEnd_;
+            bufEnd_ = other.bufEnd_;
+
+            other.reset_();
         }
 
         return *this;
     }
 
-    constexpr vector()
-        noexcept(std::is_nothrow_default_constructible_v<Allocator>)
+    constexpr vector() noexcept = default;
+
+    constexpr explicit vector(rad::allocator& allocator) noexcept
+        : allocator_(&allocator)
     {
-        values_().reset();
     }
 
-    constexpr explicit vector(const Allocator& allocator)
-        noexcept(std::is_nothrow_copy_constructible_v<Allocator>)
-        : data_(allocator, {})
+    explicit vector(no_value_init_t, size_type count)
+        : dataBegin_(allocator_->create<T>(no_value_init, count))
+        , dataEnd_(dataBegin_ + count)
+        , bufEnd_(dataEnd_)
+    {
+    }
+
+    explicit vector(no_value_init_t, rad::allocator& allocator, size_type count)
+        : allocator_(&allocator)
+        , dataBegin_(allocator_->create<T>(no_value_init, count))
+        , dataEnd_(dataBegin_ + count)
+        , bufEnd_(dataEnd_)
     {
     }
 
     template<typename... Args>
     explicit vector(size_type count, const Args&... args)
+        : dataBegin_(allocator_->create<T>(count, args...))
+        , dataEnd_(dataBegin_ + count)
+        , bufEnd_(dataEnd_)
     {
-        init_with_direct_construct_(count, args...);
     }
 
     template<typename... Args>
-    explicit vector(const Allocator& allocator,
-        size_type count, const Args&... args)
-        : data_(allocator, {})
+    explicit vector(rad::allocator& allocator, size_type count, const Args&... args)
+        : allocator_(&allocator)
+        , dataBegin_(allocator_->create<T>(count, args...))
+        , dataEnd_(dataBegin_ + count)
+        , bufEnd_(dataEnd_)
     {
-        init_with_direct_construct_(count, args...);
     }
 
-    vector(size_type count, const T& val)
+    vector(const vector& other)
+        : allocator_(other.allocator_)
+        , dataBegin_(allocator_->create_copy<T>(other.dataBegin_, other.size()))
+        , dataEnd_(dataBegin_ + other.size())
+        , bufEnd_(dataEnd_)
     {
-        init_with_direct_construct_(count, val);
     }
-
-    vector(const Allocator& allocator, size_type count, const T& val)
-        : data_(allocator, {})
-    {
-        init_with_direct_construct_(count, val);
-    }
-
-    vector(const vector& other) = delete; // TODO
 
     constexpr vector(vector&& other) noexcept
-        : data_(std::move(other.data_))
+        : allocator_(other.allocator_)
+        , dataBegin_(other.dataBegin_)
+        , dataEnd_(other.dataEnd_)
+        , bufEnd_(other.bufEnd_)
     {
-        other.values_().reset();
+        other.reset_();
     }
 
     inline ~vector()

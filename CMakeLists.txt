@@ -29,14 +29,10 @@ option(BUILD_SHARED_LIBS
     OFF
 )
 
-# Platform-specific options
-if(WIN32)
-    option(RAD_WIN32_FORCE_ANSI
-        "Force libRad to use the ANSI Win32 API instead of wide-char UNICODE Win32 functions (not recommended)"
+option(RAD_USE_OPERATOR_NEW_DELETE_REPLACEMENTS
+    "Compile libRad with C++ global operator new/delete replacements which call libRad's default allocator"
         OFF
     )
-endif()
-
 # Make CMake output all libraries and runtimes to top-level binary directory
 # (This is so .dlls will be in same folder as .exes on Windows if building shared libraries)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
@@ -48,13 +44,12 @@ set(RAD_SOURCE_DIR "src")
 
 # Set includes
 set(RAD_INCLUDES
-    "${RAD_INCLUDE_DIR}/rad_allocator_traits.h"
+    "${RAD_INCLUDE_DIR}/rad_allocator.h"
     "${RAD_INCLUDE_DIR}/rad_base.h"
     "${RAD_INCLUDE_DIR}/rad_default_allocator.h"
     "${RAD_INCLUDE_DIR}/rad_defer.h"
     "${RAD_INCLUDE_DIR}/rad_memory_pool.h"
     "${RAD_INCLUDE_DIR}/rad_memory.h"
-    "${RAD_INCLUDE_DIR}/rad_object_utils.h"
     "${RAD_INCLUDE_DIR}/rad_pair.h"
     "${RAD_INCLUDE_DIR}/rad_path_unix.h"
     "${RAD_INCLUDE_DIR}/rad_path_win32.h"
@@ -64,14 +59,12 @@ set(RAD_INCLUDES
     "${RAD_INCLUDE_DIR}/rad_scoped_enum_helpers.h"
     "${RAD_INCLUDE_DIR}/rad_span.h"
     "${RAD_INCLUDE_DIR}/rad_stack_or_heap_array.h"
-    "${RAD_INCLUDE_DIR}/rad_stack_or_heap_memory.h"
     "${RAD_INCLUDE_DIR}/rad_vector.h"
 )
 
 # Set sources
 set(RAD_SOURCES
     "${RAD_SOURCE_DIR}/rad_memory_impl.cpp"
-    "${RAD_SOURCE_DIR}/rad_memory_impl.h"
     "${RAD_SOURCE_DIR}/rad_path_unix.cpp"
     "${RAD_SOURCE_DIR}/rad_path_win32.cpp"
     "${RAD_SOURCE_DIR}/rad_pch_impl.h"
@@ -82,12 +75,12 @@ set(RAD_PCH_PATH "${RAD_SOURCE_DIR}/rad_pch_impl.h")
 # Add platform-specific sources
 if(WIN32)
     list(APPEND RAD_SOURCES
-        "${RAD_SOURCE_DIR}/platform/win32/rad_memory_impl_win32.cpp"
+        "${RAD_SOURCE_DIR}/platform/win32/rad_default_allocator_impl_win32.cpp"
         "${RAD_SOURCE_DIR}/platform/win32/rad_path_impl_win32.cpp"
     )
 else()
     list(APPEND RAD_SOURCES
-        "${RAD_SOURCE_DIR}/platform/posix/rad_memory_impl_posix.cpp"
+        "${RAD_SOURCE_DIR}/platform/posix/rad_default_allocator_impl_posix.cpp"
         "${RAD_SOURCE_DIR}/platform/posix/rad_path_impl_posix.cpp"
     )
 endif()
@@ -115,16 +108,14 @@ if(BUILD_SHARED_LIBS)
     )
 endif()
 
+# Setup preprocessor definitions
+target_compile_definitions(libRad
+    PRIVATE
+        RAD_USE_OPERATOR_NEW_DELETE_REPLACEMENTS
+)
+
 # Setup platform-specific settings
-if(WIN32)
-    if(NOT RAD_WIN32_FORCE_ANSI)
-        target_compile_definitions(libRad
-            PRIVATE
-                _UNICODE
-                UNICODE
-        )
-    endif()
-elseif(CMAKE_SHARED_LIBRARY_PREFIX STREQUAL "lib")
+if(CMAKE_SHARED_LIBRARY_PREFIX STREQUAL "lib")
     # Ensures the output name is "librad", not "liblibRad"
     set_target_properties(libRad PROPERTIES OUTPUT_NAME "rad")
 endif()
