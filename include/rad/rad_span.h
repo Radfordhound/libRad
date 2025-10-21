@@ -32,15 +32,16 @@ class span
     }
 
 public:
-    using pointer = T*;
-    using const_pointer = const T*;
-    using reference = T&;
-    using const_reference = const T&;
-    using value_type = T;
-    using size_type = std::size_t;
-    using difference_type = std::ptrdiff_t;
-    using iterator = pointer;
-    using const_iterator = const_pointer;
+    using element_type      = T;
+    using value_type        = T;
+    using pointer           = T*;
+    using const_pointer     = const T*;
+    using reference         = T&;
+    using const_reference   = const T&;
+    using size_type         = std::size_t;
+    using difference_type   = std::ptrdiff_t;
+    using iterator          = pointer;
+    using const_iterator    = const_pointer;
 
     constexpr pointer data() const noexcept
     {
@@ -93,9 +94,81 @@ public:
         return data_[index];
     }
 
-    inline reference operator[](size_type index) const
+    span<element_type> slice_unchecked(
+        size_type offset,
+        size_type count = -1) const noexcept
     {
-    #if RAD_USE_STRICT_BOUNDS_CHECKING == 1
+        if (count == -1)
+        {
+            count = (count_ - offset);
+        }
+
+        return { data_ + offset, count };
+    }
+
+    span<element_type> slice(
+        size_type offset,
+        size_type count = -1) const
+    {
+        validate_range_(offset);
+
+        if (count == -1)
+        {
+            count = (count_ - offset);
+        }
+        else if (count > (count_ - offset))
+        {
+            throw std::out_of_range(
+                "The requested slice's range was outside of the span's range"
+            );
+        }
+
+        return { data_ + offset, count };
+    }
+
+    inline span<element_type> subspan(
+        size_type offset,
+        size_type count = -1) const
+    {
+        return slice(offset, count);
+    }
+
+    constexpr span<element_type> slice_range_unchecked(
+        size_type beginIndex,
+        size_type endIndex) const noexcept
+    {
+        return { data_ + beginIndex, endIndex - beginIndex };
+    }
+
+    span<element_type> slice_range(
+        size_type beginIndex,
+        size_type endIndex) const
+    {
+        assert(endIndex >= beginIndex &&
+            "The given beginIndex must be <= the given endIndex"
+        );
+
+        validate_range_(beginIndex);
+
+        if (endIndex > count_)
+        {
+            throw std::out_of_range(
+                "The requested slice's range was outside of the span's range"
+            );
+        }
+
+        return slice_range_unchecked(beginIndex, endIndex);
+    }
+
+    constexpr explicit operator bool() const noexcept
+    {
+        return data_ != nullptr;
+    }
+
+    inline reference operator[](size_type index) const
+        noexcept(!RAD_USE_STRICT_BOUNDS_CHECKING)
+    {
+    #if RAD_USE_STRICT_BOUNDS_CHECKING
         validate_range_(index);
     #endif
 
@@ -121,9 +194,25 @@ public:
     {
     }
 
-    constexpr span(value_type &data) noexcept
+    constexpr span(value_type& data) noexcept
         : data_(&data)
         , count_(1)
+    {
+    }
+
+    template<typename ContainerType>
+    constexpr span(const ContainerType& container)
+        noexcept(noexcept(container.data()) && noexcept(container.size()))
+        : data_(container.data())
+        , count_(container.size())
+    {
+    }
+
+    template<typename ContainerType>
+    constexpr span(ContainerType& container)
+        noexcept(noexcept(container.data()) && noexcept(container.size()))
+        : data_(container.data())
+        , count_(container.size())
     {
     }
 };
