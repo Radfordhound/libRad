@@ -49,6 +49,7 @@ set(RAD_INCLUDES
     "${RAD_INCLUDE_DIR}/rad_default_allocator.h"
     "${RAD_INCLUDE_DIR}/rad_defer.h"
     "${RAD_INCLUDE_DIR}/rad_memory_pool.h"
+    "${RAD_INCLUDE_DIR}/rad_memory_stream.h"
     "${RAD_INCLUDE_DIR}/rad_memory.h"
     "${RAD_INCLUDE_DIR}/rad_pair.h"
     "${RAD_INCLUDE_DIR}/rad_path_unix.h"
@@ -66,6 +67,7 @@ set(RAD_INCLUDES
 # Set sources
 set(RAD_SOURCES
     "${RAD_SOURCE_DIR}/rad_memory_impl.cpp"
+    "${RAD_SOURCE_DIR}/rad_memory_stream.cpp"
     "${RAD_SOURCE_DIR}/rad_path_unix.cpp"
     "${RAD_SOURCE_DIR}/rad_path_win32.cpp"
     "${RAD_SOURCE_DIR}/rad_pch_impl.h"
