@@ -46,6 +46,7 @@ set(RAD_SOURCE_DIR "src")
 set(RAD_INCLUDES
     "${RAD_INCLUDE_DIR}/rad_allocator.h"
     "${RAD_INCLUDE_DIR}/rad_base.h"
+    "${RAD_INCLUDE_DIR}/rad_bit.h"
     "${RAD_INCLUDE_DIR}/rad_default_allocator.h"
     "${RAD_INCLUDE_DIR}/rad_defer.h"
     "${RAD_INCLUDE_DIR}/rad_endian.h"
