@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+  <Type Name="std::vector&lt;*&gt;">
+    <Intrinsic Name="size" Expression="(size_t)(dataEnd_ - dataBegin_)" />
+    <Intrinsic Name="capacity" Expression="(size_t)(bufEnd_ - dataBegin_)" />
+    <DisplayString>{{ size={size()} }}</DisplayString>
+    <Expand>
+      <Item Name="[capacity]" ExcludeView="simple">capacity()</Item>
+      <Item Name="[allocator]" ExcludeView="simple">allocator_</Item>
+      <ArrayItems>
+        <Size>size()</Size>
+        <ValuePointer>dataBegin_</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+</AutoVisualizer>

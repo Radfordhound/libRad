@@ -86,6 +86,7 @@ if(WIN32)
         "${RAD_SOURCE_DIR}/platform/win32/rad_path_impl_win32.cpp"
         "${RAD_SOURCE_DIR}/platform/win32/rad_wide_path_impl_win32.cpp"
         "${RAD_SOURCE_DIR}/platform/win32/rad_wide_path_impl_win32.h"
+        "${RAD_SOURCE_DIR}/platform/win32/rad.natvis"
     )
 else()
     list(APPEND RAD_SOURCES
