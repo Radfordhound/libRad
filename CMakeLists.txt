@@ -59,6 +59,7 @@ set(RAD_INCLUDES
     "${RAD_INCLUDE_DIR}/rad_scoped_enum_helpers.h"
     "${RAD_INCLUDE_DIR}/rad_span.h"
     "${RAD_INCLUDE_DIR}/rad_stack_or_heap_array.h"
+    "${RAD_INCLUDE_DIR}/rad_stream.h"
     "${RAD_INCLUDE_DIR}/rad_vector.h"
 )
 
@@ -68,6 +69,7 @@ set(RAD_SOURCES
     "${RAD_SOURCE_DIR}/rad_path_unix.cpp"
     "${RAD_SOURCE_DIR}/rad_path_win32.cpp"
     "${RAD_SOURCE_DIR}/rad_pch_impl.h"
+    "${RAD_SOURCE_DIR}/rad_stream.cpp"
 )
 
 set(RAD_PCH_PATH "${RAD_SOURCE_DIR}/rad_pch_impl.h")
