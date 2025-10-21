@@ -13,6 +13,7 @@
 #include <cstddef>
 #include <memory>
 #include <utility>
+#include <initializer_list>
 
 namespace rad
 {
@@ -127,6 +128,11 @@ public:
     inline std::size_t size() const noexcept
     {
         return count_;
+    }
+
+    [[nodiscard]] inline bool empty() const noexcept
+    {
+        return count_ == 0;
     }
 
     inline const T* data() const noexcept
@@ -340,7 +346,48 @@ public:
         }
     }
 
-    // TODO: Add iterator constructor.
+    template<typename InputIt>
+    stack_or_heap_array(rad::allocator& allocator, InputIt begin, InputIt end)
+        : allocator_(&allocator)
+        , count_(std::distance(begin, end))
+        , data_(allocate_(count_))
+    {
+        try
+        {
+            std::uninitialized_copy(begin, end, data_);
+        }
+        catch (...)
+        {
+            free_();
+            throw;
+        }
+    }
+
+    template<typename InputIt>
+    stack_or_heap_array(InputIt begin, InputIt end)
+        : count_(std::distance(begin, end))
+        , data_(allocate_(count_))
+    {
+        try
+        {
+            std::uninitialized_copy(begin, end, data_);
+        }
+        catch (...)
+        {
+            free_();
+            throw;
+        }
+    }
+
+    stack_or_heap_array(rad::allocator& allocator, std::initializer_list<T> ilist)
+        : stack_or_heap_array(allocator, ilist.begin(), ilist.end())
+    {
+    }
+
+    stack_or_heap_array(std::initializer_list<T> ilist)
+        : stack_or_heap_array(ilist.begin(), ilist.end())
+    {
+    }
 
     stack_or_heap_array(const stack_or_heap_array& other)
         : allocator_(other.allocator_)
