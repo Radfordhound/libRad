@@ -63,6 +63,7 @@ set(RAD_INCLUDES
     "${RAD_INCLUDE_DIR}/rad_span.h"
     "${RAD_INCLUDE_DIR}/rad_stack_or_heap_array.h"
     "${RAD_INCLUDE_DIR}/rad_stream.h"
+    "${RAD_INCLUDE_DIR}/rad_string.h"
     "${RAD_INCLUDE_DIR}/rad_vector.h"
 )
 
