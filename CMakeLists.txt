@@ -48,6 +48,7 @@ set(RAD_INCLUDES
     "${RAD_INCLUDE_DIR}/rad_base.h"
     "${RAD_INCLUDE_DIR}/rad_default_allocator.h"
     "${RAD_INCLUDE_DIR}/rad_defer.h"
+    "${RAD_INCLUDE_DIR}/rad_endian.h"
     "${RAD_INCLUDE_DIR}/rad_file.h"
     "${RAD_INCLUDE_DIR}/rad_memory_pool.h"
     "${RAD_INCLUDE_DIR}/rad_memory_stream.h"
