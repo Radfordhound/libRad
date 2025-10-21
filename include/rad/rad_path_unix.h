@@ -45,6 +45,8 @@ RAD_API std::string_view get_name_unix(std::string_view path) noexcept;
 
 RAD_API std::string_view get_extensions_unix(std::string_view path) noexcept;
 
+RAD_API std::string_view get_stem_unix(std::string_view path) noexcept;
+
 RAD_API std::string_view get_parent_unix(std::string_view path) noexcept;
 
 RAD_API bool append_unix(std::string& path, std::string_view subpath);

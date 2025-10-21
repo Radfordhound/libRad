@@ -117,6 +117,26 @@ std::string_view get_extensions_win32(std::string_view path) noexcept
     return path;
 }
 
+std::string_view get_stem_win32(std::string_view path) noexcept
+{
+    path.remove_suffix(get_trailing_separator_count_win32_(path));
+
+    if (!path.empty() &&
+        path.back() != ':' &&   // e.g. "C:"
+        path.back() != '?' &&   // e.g. "\\?"
+        path != "\\\\."sv)      // e.g. "\\."
+    {
+        // OPTIMIZATION: We skip checking anything else in the path
+        // since valid paths can't utilize colons or question mark
+        // characters anywhere but in their prefix anyway.
+        
+        path.remove_prefix(get_file_name_index_win32_(path));
+        path = std::string_view(path.data(), get_extensions_index_win32_(path));
+    }
+
+    return path;
+}
+
 std::string_view get_parent_win32(std::string_view path) noexcept
 {
     path.remove_suffix(get_trailing_separator_count_win32_(path));
@@ -130,7 +150,7 @@ std::string_view get_parent_win32(std::string_view path) noexcept
         // since valid paths can't utilize colons or question mark
         // characters anywhere but in their prefix anyway.
         
-        path.remove_suffix(get_file_name_index_win32_(path));
+        path = std::string_view(path.data(), get_file_name_index_win32_(path));
     }
 
     return path;

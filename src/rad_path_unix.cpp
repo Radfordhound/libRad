@@ -99,6 +99,14 @@ std::string_view get_extensions_unix(std::string_view path) noexcept
     return path;
 }
 
+std::string_view get_stem_unix(std::string_view path) noexcept
+{
+    path.remove_suffix(get_trailing_separator_count_unix_(path));
+    path.remove_prefix(get_file_name_index_unix_(path));
+
+    return std::string_view(path.data(), get_extensions_index_unix_(path));
+}
+
 std::string_view get_parent_unix(std::string_view path) noexcept
 {
     path.remove_suffix(get_trailing_separator_count_unix_(path));

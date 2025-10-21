@@ -102,6 +102,15 @@ inline std::string_view get_extensions(std::string_view path) noexcept
 #endif
 }
 
+inline std::string_view get_stem(std::string_view path) noexcept
+{
+#if RAD_PATH_IS_WIN32_TARGET == 1
+    return get_stem_win32(path);
+#else
+    return get_stem_unix(path);
+#endif
+}
+
 inline std::string_view get_parent(std::string_view path) noexcept
 {
 #if RAD_PATH_IS_WIN32_TARGET == 1
@@ -296,31 +305,11 @@ struct entry_stats
 
 RAD_API bool try_get_stats(entry_stats& entryStats, const char* path);
 
-inline bool try_get_stats(entry_stats& entryStats, const std::string& path)
-{
-    return try_get_stats(entryStats, path.c_str());
-}
-
 RAD_API entry_stats get_stats(const char* path);
-
-inline entry_stats get_stats(const std::string& path)
-{
-    return get_stats(path.c_str());
-}
 
 RAD_API bool exists(const char* path);
 
-inline bool exists(const std::string& path)
-{
-    return exists(path.c_str());
-}
-
 RAD_API std::string canonicalize(const char* path);
-
-inline std::string canonicalize(const std::string& path)
-{
-    return canonicalize(path.c_str());
-}
 }
 
 #endif

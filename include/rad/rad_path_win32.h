@@ -45,6 +45,8 @@ RAD_API std::string_view get_name_win32(std::string_view path) noexcept;
 
 RAD_API std::string_view get_extensions_win32(std::string_view path) noexcept;
 
+RAD_API std::string_view get_stem_win32(std::string_view path) noexcept;
+
 RAD_API std::string_view get_parent_win32(std::string_view path) noexcept;
 
 RAD_API bool append_win32(std::string& path, std::string_view subpath);

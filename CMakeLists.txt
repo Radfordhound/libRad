@@ -77,6 +77,8 @@ if(WIN32)
     list(APPEND RAD_SOURCES
         "${RAD_SOURCE_DIR}/platform/win32/rad_default_allocator_impl_win32.cpp"
         "${RAD_SOURCE_DIR}/platform/win32/rad_path_impl_win32.cpp"
+        "${RAD_SOURCE_DIR}/platform/win32/rad_wide_path_impl_win32.cpp"
+        "${RAD_SOURCE_DIR}/platform/win32/rad_wide_path_impl_win32.h"
     )
 else()
     list(APPEND RAD_SOURCES
