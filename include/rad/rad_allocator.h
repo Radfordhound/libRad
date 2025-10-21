@@ -10,7 +10,6 @@
 #include "rad_memory.h"
 #include <cstddef>
 #include <type_traits>
-#include <iterator>
 
 namespace rad
 {
@@ -130,10 +129,7 @@ public:
             }
 
             // Destruct the old elements.
-            if constexpr (!std::is_trivially_destructible_v<T>)
-            {
-                rad::destruct(ptr, ptr + oldCount);
-            }
+            destruct(ptr, ptr + oldCount);
 
             // Free the old memory and return new memory.
             free(ptr);
@@ -186,7 +182,7 @@ public:
                     }
                     catch (...)
                     {
-                        rad::destruct(newPtr, newPtr + minCount);
+                        destruct(newPtr, newPtr + minCount);
                         free(newPtr);
                         throw;
                     }
@@ -194,10 +190,7 @@ public:
             }
 
             // Destruct the old elements.
-            if constexpr (!std::is_trivially_destructible_v<T>)
-            {
-                rad::destruct(ptr, ptr + oldCount);
-            }
+            destruct(ptr, ptr + oldCount);
 
             // Free the old memory and return new memory.
             free(ptr);
@@ -248,17 +241,14 @@ public:
                 }
                 catch (...)
                 {
-                    rad::destruct(newPtr, newPtr + minCount);
+                    destruct(newPtr, newPtr + minCount);
                     free(newPtr);
                     throw;
                 }
             }
 
             // Destruct the old elements.
-            if constexpr (!std::is_trivially_destructible_v<T>)
-            {
-                rad::destruct(ptr, ptr + oldCount);
-            }
+            destruct(ptr, ptr + oldCount);
 
             // Free the old memory and return new memory.
             free(ptr);
@@ -267,9 +257,16 @@ public:
     }
 
     template<typename T>
+    void destroy(T* ptr) noexcept
+    {
+        destruct(*ptr);
+        free(ptr);
+    }
+
+    template<typename T>
     void destroy(T* ptr, std::size_t count) noexcept
     {
-        rad::destruct(ptr, ptr + count);
+        destruct(ptr, ptr + count);
         free(ptr);
     }
 };

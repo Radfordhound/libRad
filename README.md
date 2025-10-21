@@ -7,25 +7,9 @@ It does NOT aim to be a replacement for the C++ standard library.
 
 ## Features
 
-### Memory allocation/management
+### Memory helpers
 
-libRad adds it own memory allocation functions in `rad_memory.h`, such as
-`RAD_ALLOC`, `RAD_REALLOC`, `RAD_FREE`, `RAD_ALLOC_ALIGNED`, `RAD_REALLOC_ALIGNED`,
-and `RAD_FREE_ALIGNED`, which allocate/reallocate/free memory with/without a
-specified alignment, in a cross-platform way, automatically assigning debugging
-information (the source file path and line number of the call) to each allocation
-(unless `RAD_USE_DEBUG_MEMORY` is defined to 0 - by default it is defined to 0
-if NDEBUG is defined, or 1 otherwise).
-
-If `RAD_USE_OPERATOR_NEW_DELETE_REPLACEMENTS` is defined to 1, it will also automatically
-replace all C++ global operator new/new[]/delete/delete[] with variants that call
-the libRad memory allocation functions.
-
-If you use `RAD_NEW` instead of new/new[], it will also automatically assign debugging
-information to each allocation. There is no `RAD_DELETE`; just use normal delete/delete[]
-to delete allocations created with `RAD_NEW`.
-
-It also provides `rad::is_aligned`, which allows you to conviniently check if a pointer
+libRad provides `rad::is_aligned`, which allows you to conviniently check if a pointer
 or address is aligned to a given alignment.
 
 #### Memory pools
@@ -177,7 +161,7 @@ Example usage:
 ```cpp
 int main(int argc, char* argv[])
 {
-    int* arrayOfInts = RAD_NEW(int)[4]; // new int[4], but with debugging info
+    int* arrayOfInts = new int[4];
 
     RAD_DEFER
     {
