@@ -13,6 +13,8 @@
 #include <cstddef>
 #include <cassert>
 #include <type_traits>
+#include <iterator>
+#include <initializer_list>
 #include <limits>
 #include <algorithm>
 #include <stdexcept>
@@ -40,6 +42,10 @@ namespace rad
 /// - Has a `no_value_init` variant of the push_back function, which allows for a
 ///   default-constructed element to be pushed back (instead of a value-constructed element).
 ///
+/// - Has a `back_index` function, which returns the index of the last element in the vector.
+///
+/// - Has a `clear_and_free` function, which both empties the vector and frees its underlying memory.
+///
 /// @tparam T The value type of the vector.
 template<typename T>
 class vector
@@ -54,7 +60,8 @@ class vector
     void destroy_data_() noexcept
     {
         // NOTE: This is safe even if dataBegin and dataEnd are both nullptr.
-        allocator_->destroy(dataBegin_, size());
+        rad::destruct(dataBegin_, dataEnd_);
+        allocator_->free(dataBegin_);
     }
 
     void reset_() noexcept
@@ -70,6 +77,13 @@ class vector
                 "The given index was outside of the vector's range"
             );
         }
+    }
+
+    void assert_iterator_validity_(const T* it) const noexcept
+    {
+        assert(it >= dataBegin_ && it <= dataEnd_ &&
+            "The given iterator was invalid; this is undefined behavior!"
+        );
     }
 
     size_type_ compute_new_capacity_(size_type_ newDataCount) const noexcept
@@ -119,6 +133,46 @@ class vector
         }
     }
 
+    /*
+    template<typename InputIt>
+    T* insert_unchecked_(
+        const T* pos,
+        InputIt begin,
+        InputIt end,
+        size_type_ insertCount)
+    {
+        // TODO: Rewrite and optimize this
+        const auto it = const_cast<T*>(pos);
+
+        // Insert elements.
+        if constexpr (std::is_trivially_copyable_v<T>)
+        {
+            std::memmove(it + insertCount, it, dataEnd_ - it);
+            dataEnd_ += insertCount;
+
+            std::uninitialized_copy(begin, end, it);
+        }
+        else
+        {
+            //// 12345678
+            //// 12ABC345678
+            ////   ^ ^
+            //std::move_backward(it, dataEnd_, it + insertCount);
+            // TODO: Test this!!!
+            iterator dst = it;
+
+            while (begin != end)
+            {
+                dst = emplace_unchecked(dst, *begin);
+                ++dst;
+                ++begin;
+            }
+        }
+
+        return it;
+    }
+    */
+
 public:
     using value_type            = T;
     using allocator_type        = rad::allocator;
@@ -161,7 +215,7 @@ public:
         return bufEnd_ - dataBegin_;
     }
 
-    constexpr size_type max_size() const noexcept
+    static constexpr size_type max_size() noexcept
     {
         return std::min<size_type>(
             (std::numeric_limits<difference_type>::max)(),
@@ -204,6 +258,51 @@ public:
         return dataEnd_;
     }
 
+    inline const_reference front() const noexcept
+    {
+        assert(!empty() &&
+            "Cannot call front() on an empty vector!"
+        );
+
+        return *dataBegin_;
+    }
+
+    inline reference front() noexcept
+    {
+        assert(!empty() &&
+            "Cannot call front() on an empty vector!"
+        );
+
+        return *dataBegin_;
+    }
+
+    inline const_reference back() const noexcept
+    {
+        assert(!empty() &&
+            "Cannot call back() on an empty vector!"
+        );
+
+        return *(dataEnd_ - 1);
+    }
+
+    inline reference back() noexcept
+    {
+        assert(!empty() &&
+            "Cannot call back() on an empty vector!"
+        );
+
+        return *(dataEnd_ - 1);
+    }
+
+    inline size_type back_index() const noexcept
+    {
+        assert(!empty() &&
+            "Cannot call back_index() on an empty vector!"
+        );
+
+        return size() - 1;
+    }
+
     void reserve(size_type newCapacity)
     {
         const auto oldCapacity = capacity();
@@ -214,15 +313,131 @@ public:
         }
     }
 
+    void pop_back() noexcept
+    {
+        assert(dataEnd_ != dataBegin_ &&
+            "Cannot call pop_back() on an empty vector!"
+        );
+
+        rad::destruct(--dataEnd_);
+    }
+
+    void pop_back(size_type amount) noexcept
+    {
+        assert(size() >= amount &&
+            "Cannot pop_back() more elements than exist in the vector!"
+        );
+
+        const auto newEnd = (dataEnd_ - amount);
+        rad::destruct(newEnd, dataEnd_);
+        dataEnd_ = newEnd;
+    }
+
+    bool resize(no_value_init_t, size_type newCount)
+    {
+        const auto oldCount = size();
+
+        if (newCount > oldCount)
+        {
+            reallocate_(oldCount, newCount);
+
+            const auto newEnd = dataBegin_ + newCount;
+            std::uninitialized_default_construct(dataEnd_, newEnd);
+            dataEnd_ = newEnd;
+
+            return true;
+        }
+        else
+        {
+            pop_back(oldCount - newCount);
+            return false;
+        }
+    }
+
+    bool resize(size_type newCount)
+    {
+        const auto oldCount = size();
+
+        if (newCount > oldCount)
+        {
+            reallocate_(oldCount, newCount);
+
+            const auto newEnd = dataBegin_ + newCount;
+            std::uninitialized_value_construct(dataEnd_, newEnd);
+            dataEnd_ = newEnd;
+
+            return true;
+        }
+        else
+        {
+            pop_back(oldCount - newCount);
+            return false;
+        }
+    }
+
+    template<typename... Args>
+    bool resize(size_type newCount, const Args&... args)
+    {
+        const auto oldCount = size();
+
+        if (newCount > oldCount)
+        {
+            reallocate_(oldCount, newCount);
+
+            const auto newEnd = dataBegin_ + newCount;
+            uninitialized_direct_construct(dataEnd_, newEnd, args...);
+            dataEnd_ = newEnd;
+
+            return true;
+        }
+        else
+        {
+            pop_back(oldCount - newCount);
+            return false;
+        }
+    }
+
+    template<typename... Args>
+    inline reference emplace_back_unchecked(Args&&... args)
+        noexcept(std::is_nothrow_constructible_v<T, Args...>)
+    {
+        // Construct new element.
+        ::new (dataEnd_) T(std::forward<Args>(args)...);
+        return *(dataEnd_++);
+    }
+
     template<typename... Args>
     reference emplace_back(Args&&... args)
     {
         // Reallocate if necessary.
         reserve_for_one_();
 
-        // Construct new element.
-        ::new (dataEnd_) T(std::forward<Args>(args)...);
+        // Append new element.
+        return emplace_back_unchecked(std::forward<Args>(args)...);
+    }
+
+    inline reference push_back_unchecked(no_value_init_t)
+        noexcept(std::is_nothrow_default_constructible_v<T>)
+    {
+        // Default-construct new element if necessary.
+        if constexpr (!std::is_trivially_default_constructible_v<T>)
+        {
+            ::new (dataEnd_) T;
+        }
+
         return *(dataEnd_++);
+    }
+
+    inline reference push_back_unchecked(const T& val)
+        noexcept(std::is_nothrow_copy_constructible_v<T>)
+    {
+        return emplace_back_unchecked(val);
+    }
+
+    inline reference push_back_unchecked(T&& val)
+        noexcept(std::is_nothrow_move_constructible_v<T>)
+    {
+        return emplace_back_unchecked(std::move(val));
     }
 
     reference push_back(no_value_init_t)
@@ -230,13 +445,8 @@ public:
         // Reallocate if necessary.
         reserve_for_one_();
 
-        // Default-construct new element if necessary.
-        if constexpr (!std::is_trivially_default_constructible_v<T>)
-        {
-            ::new (dataEnd_) T();
-        }
-
-        return *(dataEnd_++);
+        // Append new element.
+        return push_back_unchecked(no_value_init);
     }
 
     inline reference push_back(const T& val)
@@ -247,6 +457,303 @@ public:
     inline reference push_back(T&& val)
     {
         return emplace_back(std::move(val));
+    }
+
+    template<typename InputIt>
+    void assign(InputIt begin, InputIt end)
+    {
+        const auto oldBegin = dataBegin_;
+        const auto oldEnd = dataEnd_;
+
+        reset_();
+
+        // Destruct the old elements.
+        rad::destruct(oldBegin, oldEnd);
+
+        // Reallocate memory.
+        const std::size_t newCount = std::distance(begin, end);
+
+        const auto newPtr = static_cast<T*>(reallocate(
+            oldBegin,
+            sizeof(T) * newCount,
+            alignof(T)
+        ));
+
+        // Copy new elements to reallocated memory.
+        try
+        {
+            std::uninitialized_copy(begin, end, newPtr);
+        }
+        catch (...)
+        {
+            free(newPtr);
+            throw;
+        }
+
+        dataBegin_ = newPtr;
+        bufEnd_ = dataEnd_ = newPtr + newCount;
+    }
+
+    iterator emplace_unchecked(no_value_init_t, const_iterator pos)
+    {
+        // Emplace the element.
+        const auto it = const_cast<iterator>(pos);
+        const auto oldEnd = dataEnd_;
+
+        if (it != oldEnd)
+        {
+            // Move-construct last element at the new uninitialized end.
+            ::new (oldEnd) T(std::move(*(oldEnd - 1)));
+            ++dataEnd_;
+
+            // Shift remaining elements as necessary.
+            std::move_backward(it, oldEnd - 1, oldEnd);
+
+            // NOTE: The new element is an old element which is already
+            // constructed, so we don't have to do anything else here.
+        }
+        else
+        {
+            push_back_unchecked(no_value_init);
+        }
+
+        return it;
+    }
+
+    iterator emplace(no_value_init_t, const_iterator pos)
+    {
+        assert_iterator_validity_(pos);
+
+        // Reallocate if necessary.
+        const auto index = (pos - dataBegin_);
+        reserve_for_one_();
+
+        // Compute new iterator.
+
+        // NOTE: This is necessary because the above
+        // reallocation might invalidate the iterator!
+
+        pos = (dataBegin_ + index);
+
+        // Emplace new element.
+        return emplace_unchecked(no_value_init, pos);
+    }
+
+    template<typename... Args>
+    iterator emplace_unchecked(const_iterator pos, Args&&... args)
+    {
+        // Emplace the element.
+        const auto it = const_cast<iterator>(pos);
+        const auto oldEnd = dataEnd_;
+
+        if (it != oldEnd)
+        {
+            // Move-construct last element at the new uninitialized end.
+            ::new (oldEnd) T(std::move(*(oldEnd - 1)));
+            ++dataEnd_;
+
+            // Shift remaining elements as necessary.
+            std::move_backward(it, oldEnd - 1, oldEnd);
+
+            // Move-assign the new element.
+            *it = T(std::forward<Args>(args)...);
+        }
+        else
+        {
+            emplace_back_unchecked(std::forward<Args>(args)...);
+        }
+
+        return it;
+    }
+
+    template<typename... Args>
+    iterator emplace(const_iterator pos, Args&&... args)
+    {
+        assert_iterator_validity_(pos);
+
+        // Reallocate if necessary.
+        const auto index = (pos - dataBegin_);
+        reserve_for_one_();
+
+        // Compute new iterator.
+
+        // NOTE: This is necessary because the above
+        // reallocation might invalidate the iterator!
+
+        pos = (dataBegin_ + index);
+
+        // Emplace new element.
+        return emplace_unchecked(pos, std::forward<Args>(args)...);
+    }
+
+    inline iterator insert_unchecked(const_iterator pos, const T& val)
+    {
+        return emplace_unchecked(pos, val);
+    }
+
+    inline iterator insert_unchecked(const_iterator pos, T&& val)
+    {
+        return emplace_unchecked(pos, std::move(val));
+    }
+
+    iterator insert_unchecked(no_value_init_t, const_iterator pos, size_type count)
+    {
+        // Insert elements.
+        const auto it = const_cast<iterator>(pos);
+
+        if constexpr (std::is_trivially_copyable_v<T>)
+        {
+            // TODO: Test this!!!
+            const auto insertRangeEnd = (it + count);
+            std::memmove(insertRangeEnd, it, dataEnd_ - it);
+
+            std::uninitialized_default_construct(it, insertRangeEnd);
+        }
+        else
+        {
+            // TODO: Replace this with an optimized algorithm!
+            // TODO: Test this!!!
+            while (count)
+            {
+                emplace_unchecked(no_value_init, it);
+                --count;
+            }
+        }
+
+        return it;
+    }
+
+    inline iterator insert(const_iterator pos, const T& val)
+    {
+        return emplace(pos, val);
+    }
+
+    inline iterator insert(const_iterator pos, T&& val)
+    {
+        return emplace(pos, std::move(val));
+    }
+
+    iterator insert(no_value_init_t, const_iterator pos, size_type count)
+    {
+        assert_iterator_validity_(pos);
+
+        // Reallocate if necessary.
+        const auto index = (pos - dataBegin_);
+        reserve(size() + count);
+
+        // Compute new iterator.
+
+        // NOTE: This is necessary because the above
+        // reallocation might invalidate the iterator!
+
+        pos = (dataBegin_ + index);
+
+        // Insert new elements.
+        return insert_unchecked(no_value_init, pos, count);
+    }
+
+    iterator insert(const_iterator pos, size_type count, const T& val)
+    {
+        // TODO: Create an unchecked variant of this function.
+
+        // Reallocate if necessary.
+        const auto index = (pos - dataBegin_);
+        reserve(size() + count);
+
+        // Compute new insertion iterator.
+
+        // NOTE: This is necessary because the above reallocation
+        // might invalidate the iterator! Also, we need to cast
+        // from a const_iterator to an iterator anyway.
+
+        iterator it = (dataBegin_ + index);
+
+        // Insert elements.
+        if constexpr (std::is_trivially_copyable_v<T>)
+        {
+            // TODO: Test this!!!
+            std::memmove(it + count, it, dataEnd_ - it);
+
+            while (count)
+            {
+                *it = val;
+                ++it;
+                --count;
+            }
+
+            dataEnd_ = it;
+        }
+        else
+        {
+            // TODO: Test this!!!
+            while (count)
+            {
+                it = emplace(it, val);
+                --count;
+            }
+        }
+
+        return it;
+    }
+
+    template<typename InputIt>
+    iterator insert(const_iterator pos, InputIt begin, InputIt end)
+    {
+        // TODO: Create an unchecked variant of this function.
+        // TODO: Rewrite and optimize this function.
+
+        // Compute insert count and reallocate if necessary.
+        const auto insertCount = std::distance(begin, end);
+        const auto index = (pos - dataBegin_);
+
+        reserve(size() + insertCount);
+
+        // Compute new insertion iterator.
+
+        // NOTE: This is necessary because the above reallocation
+        // might invalidate the iterator! Also, we need to cast
+        // from a const_iterator to an iterator anyway.
+
+        const iterator it = (dataBegin_ + index);
+
+        // Insert elements.
+        if constexpr (std::is_trivially_copyable_v<T>)
+        {
+            std::memmove(it + insertCount, it, dataEnd_ - it);
+            dataEnd_ += insertCount;
+
+            std::uninitialized_copy(begin, end, it);
+        }
+        else
+        {
+            // TODO: Test this!!!
+            iterator dst = it;
+
+            while (begin != end)
+            {
+                dst = emplace_unchecked(dst, *begin);
+                ++dst;
+                ++begin;
+            }
+        }
+
+        return it;
+    }
+
+    inline iterator insert(const_iterator pos, std::initializer_list<T> ilist)
+    {
+        return insert(pos, ilist.begin(), ilist.end());
+    }
+
+    template<typename InputIt>
+    inline iterator append(InputIt begin, InputIt end)
+    {
+        return insert(this->end(), begin, end);
+    }
+
+    inline iterator append(no_value_init_t, size_type count)
+    {
+        return insert(no_value_init, end(), count);
     }
 
     iterator erase(const_iterator pos)
@@ -265,16 +772,13 @@ public:
 
     // TODO: Range erase
 
-    void pop_back()
+    void clear() noexcept
     {
-        assert(dataEnd_ != dataBegin_ &&
-            "Cannot call pop_back() on an empty vector!"
-        );
-
-        rad::destruct(--dataEnd_);
+        rad::destruct(dataBegin_, dataEnd_);
+        dataEnd_ = dataBegin_;
     }
 
-    void clear() noexcept
+    void clear_and_free() noexcept
     {
         destroy_data_();
         reset_();
@@ -343,7 +847,7 @@ public:
                 otherCount
             );
 
-            clear();
+            destroy_data_();
 
             allocator_ = other.allocator_;
             dataBegin_ = newPtr;
@@ -407,6 +911,36 @@ public:
         , dataBegin_(allocator_->create<T>(count, args...))
         , dataEnd_(dataBegin_ + count)
         , bufEnd_(dataEnd_)
+    {
+    }
+
+    template<typename InputIt>
+    explicit vector(rad::allocator& allocator, InputIt begin, InputIt end)
+        : allocator_(&allocator)
+    {
+        const std::size_t count = std::distance(begin, end);
+
+        dataBegin_ = static_cast<T*>(allocator_->allocate(
+            sizeof(T) * count,
+            alignof(T)
+        ));
+
+        bufEnd_ = dataEnd_ = dataBegin_ + count;
+
+        try
+        {
+            std::uninitialized_copy(begin, end, dataBegin_);
+        }
+        catch (...)
+        {
+            free(dataBegin_);
+            throw;
+        }
+    }
+
+    template<typename InputIt>
+    explicit vector(InputIt begin, InputIt end)
+        : vector(default_allocator, begin, end)
     {
     }
 
