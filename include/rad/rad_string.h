@@ -44,7 +44,7 @@ template<
     class TraitsType = std::char_traits<CharType>>
 class basic_string
 {
-    friend basic_optional_string;
+    friend basic_optional_string<CharType, TraitsType>;
 
     using size_type_ = std::size_t;
 
@@ -178,7 +178,7 @@ public:
 
     constexpr rad::allocator& allocator() const noexcept
     {
-        return allocator_;
+        return *allocator_;
     }
 
     constexpr bool owns_data() const noexcept
@@ -499,7 +499,7 @@ public:
 
     static constexpr size_type max_size() noexcept
     {
-        return str_.max_size();
+        return inner_type_::max_size();
     }
 
     constexpr rad::allocator& allocator() const noexcept
@@ -806,8 +806,11 @@ struct hash<rad::basic_optional_string<CharType>>
     }
 };
 }
+#endif
 
 #ifdef ANKERL_UNORDERED_DENSE_H
+#ifndef RAD_STRING_SPEC_FOR_ANKERL_UNORDERED_DENSE
+#define RAD_STRING_SPEC_FOR_ANKERL_UNORDERED_DENSE
 namespace ankerl::unordered_dense
 {
 template<typename CharType>
@@ -833,5 +836,5 @@ struct hash<rad::basic_optional_string<CharType>>
 };
 }
 #endif
-
 #endif
+

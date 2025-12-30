@@ -18,6 +18,7 @@
 #include <limits>
 #include <algorithm>
 #include <stdexcept>
+#include <cstring>
 
 namespace rad
 {

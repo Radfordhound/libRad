@@ -107,7 +107,7 @@ bool file_stream::try_close_(std::uintmax_t handle) noexcept
     return (::close(static_cast<int>(handle)) == 0);
 }
 
-std::size_t file_stream::try_read_(void* buf, std::size_t size)
+std::size_t file_stream::try_read_chunk_(void* buf, std::size_t size)
 {
     const auto fileHandle = static_cast<int>(handle_);
     const auto bytesReadOrError = ::read(fileHandle, buf, size);
@@ -192,14 +192,14 @@ std::size_t file_stream::try_write(const void* buf, std::size_t size)
     return 0;
 }
 
-static constexpr int get_posix_seek_mode_(seek_mode mode) noexcept
+static constexpr int get_posix_seek_mode_(file_stream::seek_mode mode) noexcept
 {
     switch (mode)
     {
-    case seek_mode::current:
+    case file_stream::seek_mode::current:
         return SEEK_CUR;
     
-    case seek_mode::end:
+    case file_stream::seek_mode::end:
         return SEEK_END;
 
     default:
