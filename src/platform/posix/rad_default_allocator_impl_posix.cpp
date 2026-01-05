@@ -32,8 +32,11 @@ void* default_allocator_t::reallocate(
     
     const auto newPtr = allocate(size, alignment);
 
-    std::memcpy(newPtr, ptr, size);
-    free(ptr);
+    if (ptr)
+    {
+        std::memcpy(newPtr, ptr, size);
+        free(ptr);
+    }
 
     return newPtr;
 }
