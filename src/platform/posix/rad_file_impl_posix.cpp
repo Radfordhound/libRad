@@ -90,8 +90,11 @@ std::uintmax_t file_stream::try_open_(const char* filePath, unsigned long flags)
         break;
     }
 
-    // TODO: Pass third permissions argument to open.
-    const auto fileHandle = ::open(filePath, oflag);
+    const auto fileHandle = ::open(
+        filePath,
+        oflag,
+        S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH // TODO: Are these good default permissions ??
+    );
 
     if (fileHandle == -1)
     {
@@ -125,13 +128,42 @@ std::size_t file_stream::try_read_chunk_(void* buf, std::size_t size)
 
         // In other cases, we need to inform the user that the file position
         // is now, unfortunately, indeterminate. So, we throw an exception.
-        throw std::system_error(errno, std::generic_category());
+        throw std::system_error(lastErr, std::generic_category());
     }
 
     const auto bytesRead = static_cast<std::size_t>(bytesReadOrError);
 
     pos_ += bytesRead;
     return bytesRead;
+}
+
+std::size_t file_stream::try_write_chunk_(const void* buf, std::size_t size)
+{
+    const auto fileHandle = static_cast<int>(handle_);
+    const auto bytesWrittenOrError = ::write(fileHandle, buf, size);
+
+    if (bytesWrittenOrError == -1)
+    {
+        const int lastErr = errno;
+
+        // TODO: Is an error code of EAGAIN guaranteed by the POSIX specification to not modify the stream?
+
+        //// In error cases where the file descriptor is guaranteed by the
+        //// POSIX specification to not be modified, just return 0;
+        //if (lastErr == EAGAIN) // TODO: Are there other cases where POSIX guarantees this?
+        //{
+            //return 0;
+        //}
+
+        // In other cases, we need to inform the user that the file position
+        // is now, unfortunately, indeterminate. So, we throw an exception.
+        throw std::system_error(lastErr, std::generic_category());
+    }
+
+    const auto bytesWritten = static_cast<std::size_t>(bytesWrittenOrError);
+
+    pos_ += bytesWritten;
+    return bytesWritten;
 }
 
 unsigned long long file_stream::get_size() const
@@ -188,8 +220,31 @@ std::size_t file_stream::try_write(const void* buf, std::size_t size)
         "This stream does not have the capability to write"
     );
 
-    // TODO
-    return 0;
+    const auto srcBegin = static_cast<const unsigned char*>(buf);
+    auto curSrc = srcBegin;
+
+    // TODO: Write in chunks of 4MiB instead??
+
+    // POSIX write() has implementation-defined results if we request a number of bytes
+    // that is greater than SSIZE_MAX; so if the requested size is greater than this
+    // (very unlikely), we first read in chunks of up to SSIZE_MAX bytes.
+    while (size > SSIZE_MAX) // TODO: Mark unlikely
+    {
+        const auto bytesWritten = try_write_chunk_(curSrc, SSIZE_MAX);
+        curSrc += bytesWritten;
+
+        if (bytesWritten < SSIZE_MAX)
+        {
+            return static_cast<std::size_t>(curSrc - srcBegin);
+        }
+
+        size -= bytesWritten;
+    }
+
+    // Write the final chunk (most of the time this will be the only actual call to try_write_chunk_).
+    curSrc += try_write_chunk_(curSrc, size);
+
+    return static_cast<std::size_t>(curSrc - srcBegin);
 }
 
 static constexpr int get_posix_seek_mode_(file_stream::seek_mode mode) noexcept

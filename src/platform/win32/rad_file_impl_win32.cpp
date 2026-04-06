@@ -273,29 +273,29 @@ std::size_t file_stream::try_write(const void* buf, std::size_t size)
         "This stream does not have the capability to write"
     );
 
-    const auto dstBegin = static_cast<const unsigned char*>(buf);
-    auto curDst = dstBegin;
+    const auto srcBegin = static_cast<const unsigned char*>(buf);
+    auto curSrc = srcBegin;
 
     // Write in chunks.
     static constexpr std::size_t chunkSize = (4 * 1024 * 1024); // 4MiB
 
     while (size > chunkSize)
     {
-        const auto bytesWritten = try_write_chunk_(curDst, chunkSize);
-        curDst += bytesWritten;
+        const auto bytesWritten = try_write_chunk_(curSrc, chunkSize);
+        curSrc += bytesWritten;
 
         if (bytesWritten < chunkSize)
         {
-            return static_cast<std::size_t>(curDst - dstBegin);
+            return static_cast<std::size_t>(curSrc - srcBegin);
         }
 
         size -= bytesWritten;
     }
 
     // Write the final chunk (often this will be the only actual call to try_write_chunk_).
-    curDst += try_write_chunk_(curDst, size);
+    curSrc += try_write_chunk_(curSrc, size);
 
-    return static_cast<std::size_t>(curDst - dstBegin);
+    return static_cast<std::size_t>(curSrc - srcBegin);
 }
 
 static constexpr DWORD get_win32_seek_mode_(file_stream::seek_mode mode) noexcept
