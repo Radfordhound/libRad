@@ -457,6 +457,46 @@ inline bool operator==(
     return (b.compare(a) == 0);
 }
 
+template<typename CharType, class TraitsType>
+inline bool operator!=(
+    const basic_string<CharType, TraitsType>& a,
+    const basic_string<CharType, TraitsType>& b)
+{
+    return (a.compare(b) != 0);
+}
+
+template<typename CharType, class TraitsType>
+inline bool operator!=(
+    const basic_string<CharType, TraitsType>& a,
+    const CharType* b)
+{
+    return (a.compare(b) != 0);
+}
+
+template<typename CharType, class TraitsType>
+inline bool operator!=(
+    const CharType* a,
+    const basic_string<CharType, TraitsType>& b)
+{
+    return (b.compare(a) != 0);
+}
+
+template<typename CharType, class TraitsType>
+inline bool operator!=(
+    const basic_string<CharType, TraitsType>& a,
+    std::basic_string_view<CharType, TraitsType> b)
+{
+    return (a.compare(b) != 0);
+}
+
+template<typename CharType, class TraitsType>
+inline bool operator!=(
+    std::basic_string_view<CharType, TraitsType> a,
+    const basic_string<CharType, TraitsType>& b)
+{
+    return (b.compare(a) != 0);
+}
+
 using string = basic_string<char>;
 using wstring = basic_string<wchar_t>;
 using u16string = basic_string<char16_t>;
