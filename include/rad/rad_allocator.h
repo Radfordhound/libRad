@@ -7,9 +7,11 @@
 #ifndef RAD_ALLOCATOR_H_INCLUDED
 #define RAD_ALLOCATOR_H_INCLUDED
 
+#include "rad_base.h"
 #include "rad_memory.h"
 #include <cstddef>
 #include <type_traits>
+#include <new>
 
 namespace rad
 {
@@ -270,6 +272,26 @@ public:
         free(ptr);
     }
 };
+
+class default_allocator_t
+    : public allocator
+{
+public:
+    RAD_API void* allocate(
+        std::size_t size,
+        std::size_t alignment
+    ) override;
+
+    RAD_API void* reallocate(
+        void* ptr,
+        std::size_t size,
+        std::size_t alignment
+    ) override;
+
+    RAD_API void free(void* ptr) noexcept override;
+};
+
+RAD_API [[maybe_unused]] extern default_allocator_t default_allocator;
 }
 
 #endif

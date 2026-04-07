@@ -4,7 +4,7 @@
 /// @date 2023-04-08
 /// @copyright Copyright (c) Graham Scott; see LICENSE.txt file for details
 
-#include "rad_default_allocator.h"
+#include "rad_allocator.h"
 
 #if RAD_USE_OPERATOR_NEW_DELETE_REPLACEMENTS
 

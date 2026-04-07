@@ -8,6 +8,7 @@
 #define RAD_STREAM_H_INCLUDED
 
 #include "rad_base.h"
+#include "rad_allocator.h"
 #include "rad_string.h"
 #include <cstddef>
 

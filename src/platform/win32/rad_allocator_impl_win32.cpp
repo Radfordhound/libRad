@@ -1,10 +1,10 @@
-/// @file rad_default_allocator_impl_win32.cpp
+/// @file rad_allocator_impl_win32.cpp
 /// @author Graham Scott
-/// @brief Windows implementation of rad_default_allocator.h
+/// @brief Windows implementation of rad_allocator.h
 /// @date 2024-12-05
 /// @copyright Copyright (c) Graham Scott; see LICENSE.txt file for details
 
-#include "rad_default_allocator.h"
+#include "rad_allocator.h"
 #include <stdlib.h>
 
 namespace rad

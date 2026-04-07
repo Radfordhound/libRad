@@ -47,7 +47,6 @@ set(RAD_INCLUDES
     "${RAD_INCLUDE_DIR}/rad_allocator.h"
     "${RAD_INCLUDE_DIR}/rad_base.h"
     "${RAD_INCLUDE_DIR}/rad_bit.h"
-    "${RAD_INCLUDE_DIR}/rad_default_allocator.h"
     "${RAD_INCLUDE_DIR}/rad_defer.h"
     "${RAD_INCLUDE_DIR}/rad_endian.h"
     "${RAD_INCLUDE_DIR}/rad_file.h"
@@ -83,7 +82,7 @@ set(RAD_PCH_PATH "${RAD_SOURCE_DIR}/rad_pch_impl.h")
 # Add platform-specific sources
 if(WIN32)
     list(APPEND RAD_SOURCES
-        "${RAD_SOURCE_DIR}/platform/win32/rad_default_allocator_impl_win32.cpp"
+        "${RAD_SOURCE_DIR}/platform/win32/rad_allocator_impl_win32.cpp"
         "${RAD_SOURCE_DIR}/platform/win32/rad_file_impl_win32.cpp"
         "${RAD_SOURCE_DIR}/platform/win32/rad_path_impl_win32.cpp"
         "${RAD_SOURCE_DIR}/platform/win32/rad_wide_path_impl_win32.cpp"
@@ -92,7 +91,7 @@ if(WIN32)
     )
 else()
     list(APPEND RAD_SOURCES
-        "${RAD_SOURCE_DIR}/platform/posix/rad_default_allocator_impl_posix.cpp"
+        "${RAD_SOURCE_DIR}/platform/posix/rad_allocator_impl_posix.cpp"
         "${RAD_SOURCE_DIR}/platform/posix/rad_file_impl_posix.cpp"
         "${RAD_SOURCE_DIR}/platform/posix/rad_path_impl_posix.cpp"
     )

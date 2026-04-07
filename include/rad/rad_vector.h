@@ -8,7 +8,7 @@
 #define RAD_VECTOR_H_INCLUDED
 
 #include "rad_base.h"
-#include "rad_default_allocator.h"
+#include "rad_allocator.h"
 #include "rad_memory.h"
 #include <cstddef>
 #include <cassert>

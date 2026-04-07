@@ -7,7 +7,7 @@
 #ifndef RAD_STRING_H_INCLUDED
 #define RAD_STRING_H_INCLUDED
 
-#include "rad_default_allocator.h"
+#include "rad_allocator.h"
 #include "rad_bit.h"
 #include <string>
 #include <string_view>
