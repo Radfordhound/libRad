@@ -292,6 +292,62 @@ public:
 };
 
 RAD_API [[maybe_unused]] extern default_allocator_t default_allocator;
+
+template<typename T>
+class std_allocator
+{
+    rad::allocator* allocator_ = &default_allocator;
+
+public:
+    using value_type = T;
+    using propagate_on_container_move_assignment = std::true_type;
+    using is_always_equal = std::false_type;
+
+    constexpr rad::allocator& allocator() const noexcept
+    {
+        return *allocator_;
+    }
+
+    [[nodiscard]] T* allocate(std::size_t n)
+    {
+        if (std::size_t{SIZE_MAX} / sizeof(T) < n)
+        {
+            throw std::bad_array_new_length();
+        }
+
+        return allocator_->allocate(sizeof(T) * n, alignof(T));
+    }
+
+    void deallocate(T* p, std::size_t n)
+    {
+        allocator_->free(p);
+    }
+
+    constexpr std_allocator() noexcept = default;
+
+    constexpr std_allocator(rad::allocator& allocator) noexcept
+        : allocator_(&allocator)
+    {
+    }
+
+    template<class U>
+    constexpr std_allocator(const std_allocator<U>& other) noexcept
+        : allocator_(other.allocator_)
+    {
+    }
+};
+
+template<class T, class U>
+inline bool operator==(const std_allocator<T>& a, const std_allocator<U>& b) noexcept
+{
+    return a.allocator() == b.allocator();
+}
+
+template<class T, class U>
+inline bool operator!=(const std_allocator<T>& a, const std_allocator<U>& b) noexcept
+{
+    return a.allocator() != b.allocator();
+}
 }
 
 #endif
