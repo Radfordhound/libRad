@@ -93,8 +93,8 @@ entry_stats get_stats(const char* path)
 
 bool exists(const char* path)
 {
-    // TODO
-    return false;
+    const win32_wide_path_ widePath(path);
+    return (GetFileAttributesW(widePath) != INVALID_FILE_ATTRIBUTES);
 }
 
 std::string canonicalize(const char* path)
