@@ -9,6 +9,8 @@
 #define RAD_SPAN_H_INCLUDED
 
 #include "rad_base.h"
+#include <utility>
+#include <type_traits>
 #include <cstddef>
 #include <cassert>
 #include <stdexcept>
@@ -21,12 +23,22 @@ class span
     T*              data_ = nullptr;
     std::size_t     count_ = 0;
 
-    void validate_range_(std::size_t index) const
+    constexpr void validate_range_(std::size_t index) const
     {
         if (index >= count_)
         {
             throw std::out_of_range(
                 "The given index was outside of the span's range"
+            );
+        }
+    }
+
+    constexpr void validate_slice_index_(std::size_t index) const
+    {
+        if (index > count_)
+        {
+            throw std::out_of_range(
+                "The requested slice's range was outside of the span's range"
             );
         }
     }
@@ -94,7 +106,7 @@ public:
         return data_[index];
     }
 
-    span<element_type> slice_unchecked(
+    constexpr span<element_type> slice_unchecked(
         size_type offset,
         size_type count = -1) const noexcept
     {
@@ -106,31 +118,41 @@ public:
         return { data_ + offset, count };
     }
 
-    span<element_type> slice(
+    constexpr span<element_type> slice(
         size_type offset,
         size_type count = -1) const
     {
-        validate_range_(offset);
+        validate_slice_index_(offset);
 
         if (count == -1)
         {
             count = (count_ - offset);
         }
-        else if (count > (count_ - offset))
+        else
         {
-            throw std::out_of_range(
-                "The requested slice's range was outside of the span's range"
-            );
+            validate_slice_index_(offset + count);
         }
 
         return { data_ + offset, count };
     }
 
-    inline span<element_type> subspan(
+    constexpr span<element_type> subspan(
         size_type offset,
         size_type count = -1) const
     {
         return slice(offset, count);
+    }
+
+    constexpr span<element_type> slice_range_unchecked(
+        size_type beginIndex) const noexcept
+    {
+        return { data_ + beginIndex, count_ - beginIndex };
+    }
+
+    constexpr span<element_type> slice_range(size_type beginIndex) const
+    {
+        validate_slice_index_(beginIndex);
+        return slice_range_unchecked(beginIndex);
     }
 
     constexpr span<element_type> slice_range_unchecked(
@@ -140,24 +162,35 @@ public:
         return { data_ + beginIndex, endIndex - beginIndex };
     }
 
-    span<element_type> slice_range(
+    constexpr span<element_type> slice_range(
         size_type beginIndex,
         size_type endIndex) const
     {
-        assert(endIndex >= beginIndex &&
-            "The given beginIndex must be <= the given endIndex"
-        );
+        validate_slice_index_(beginIndex);
 
-        validate_range_(beginIndex);
-
-        if (endIndex > count_)
+        if (endIndex < beginIndex)
         {
             throw std::out_of_range(
-                "The requested slice's range was outside of the span's range"
+                "The requested slice's range was invalid"
             );
         }
 
+        validate_slice_index_(endIndex);
+
         return slice_range_unchecked(beginIndex, endIndex);
+    }
+
+    constexpr span<element_type> slice_range_unchecked(
+        const_iterator begin) const noexcept
+    {
+        return { begin, end() - begin };
+    }
+
+    constexpr span<element_type> slice_range_unchecked(
+        const_iterator begin,
+        const_iterator end) const noexcept
+    {
+        return { begin, end - begin };
     }
 
     constexpr explicit operator bool() const noexcept
@@ -187,6 +220,15 @@ public:
     {
     }
 
+    constexpr span(pointer begin, pointer end) noexcept
+        : data_(begin)
+        , count_(end - begin)
+    {
+        assert(end >= begin &&
+            "Invalid span range"
+        );
+    }
+
     template<std::size_t Count>
     constexpr span(value_type (&data)[Count]) noexcept
         : data_(data)
@@ -200,15 +242,13 @@ public:
     {
     }
 
-    template<typename ContainerType>
-    constexpr span(const ContainerType& container)
-        noexcept(noexcept(container.data()) && noexcept(container.size()))
-        : data_(container.data())
-        , count_(container.size())
-    {
-    }
-
-    template<typename ContainerType>
+    template<
+        typename ContainerType,
+        typename Dummy = std::enable_if_t<std::is_same_v<void, std::void_t<
+            decltype(std::declval<ContainerType>().data()),
+            decltype(std::declval<ContainerType>().size())
+        >>>
+    >
     constexpr span(ContainerType& container)
         noexcept(noexcept(container.data()) && noexcept(container.size()))
         : data_(container.data())
