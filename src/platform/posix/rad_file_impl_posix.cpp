@@ -7,6 +7,7 @@
 #include "rad_file.h"
 #include <fcntl.h>
 #include <unistd.h>
+#include <sys/stat.h>
 #include <limits.h>
 
 namespace rad
@@ -168,8 +169,15 @@ std::size_t file_stream::try_write_chunk_(const void* buf, std::size_t size)
 
 unsigned long long file_stream::get_size() const
 {
-    // TODO
-    return 0;
+    const auto fileHandle = static_cast<int>(handle_);
+    struct stat s;
+
+    if (fstat(fileHandle, &s) == -1)
+    {
+        throw std::system_error(errno, std::generic_category());
+    }
+
+    return s.st_size;
 }
 
 void file_stream::flush()
