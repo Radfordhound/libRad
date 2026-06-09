@@ -59,7 +59,7 @@ public:
 
     RAD_API readonly_memory_stream() noexcept;
 
-    RAD_API readonly_memory_stream(span<const unsigned char> data) noexcept;
+    RAD_API explicit readonly_memory_stream(span<const unsigned char> data) noexcept;
 
     RAD_API readonly_memory_stream(
         const void* data,
@@ -96,6 +96,12 @@ public:
 
     RAD_API void clear() noexcept;
 
+    [[nodiscard]] inline vector<unsigned char> release() noexcept
+    {
+        pos_ = 0;
+        return std::move(data_);
+    }
+
     inline unsigned long long get_size() const override
     {
         return data_.size();
@@ -122,16 +128,18 @@ public:
 
     RAD_API bool try_read_string8(vector<char>& buf) override;
 
-    RAD_API memory_stream() noexcept;
+    RAD_API explicit memory_stream(
+        rad::allocator& allocator = rad::default_allocator
+    ) noexcept;
 
-    RAD_API memory_stream(span<const unsigned char> data);
+    RAD_API explicit memory_stream(span<const unsigned char> data);
 
     RAD_API memory_stream(
         const void* data,
         std::size_t size
     );
 
-    RAD_API memory_stream(vector<unsigned char> data);
+    RAD_API explicit memory_stream(vector<unsigned char> data);
 };
 }
 

@@ -271,8 +271,9 @@ bool memory_stream::try_read_string8(vector<char>& buf)
     return true;
 }
 
-memory_stream::memory_stream() noexcept
+memory_stream::memory_stream(rad::allocator& allocator) noexcept
     : stream(static_capabilities_)
+    , data_(allocator)
 {
 }
 
