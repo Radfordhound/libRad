@@ -337,11 +337,6 @@ bool stream::try_read_string8(vector<char>& buf)
         try_read_string8_one_by_one_(buf);
 }
 
-std::size_t stream::try_write_string8(const char* str)
-{
-    return try_write(str, std::strlen(str) + 1);
-}
-
 void stream::write_nulls(std::size_t amount)
 {
     if (try_write_nulls(amount) != amount)
@@ -389,11 +384,6 @@ string stream::read_string8(allocator& allocator)
     }
 
     return string{take_ownership, allocator, strMem.release()};
-}
-
-void stream::write_string8(const char* str)
-{
-    write(str, std::strlen(str) + 1);
 }
 
 void stream::read(void* buf, std::size_t size)

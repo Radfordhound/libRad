@@ -363,7 +363,10 @@ public:
     ///
     /// @param str The 8-bit-char string to write.
     /// @return The number of bytes that were successfully written to the stream.
-    RAD_API std::size_t try_write_string8(const char* str);
+    inline std::size_t try_write_string8(cstring_view str)
+    {
+        return try_write(str.c_str(), str.size() + 1);
+    }
 
     RAD_API void write_nulls(std::size_t amount);
 
@@ -380,7 +383,10 @@ public:
     /// does not have the capability to write.
     ///
     /// @param str The 8-bit-char string to write.
-    RAD_API void write_string8(const char* str);
+    inline void write_string8(cstring_view str)
+    {
+        write(str.c_str(), str.size() + 1);
+    }
 
     RAD_API void read(void* buf, std::size_t size);
 
