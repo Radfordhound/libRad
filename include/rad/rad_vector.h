@@ -609,6 +609,11 @@ public:
             std::memmove(insertRangeEnd, it, dataEnd_ - it);
 
             std::uninitialized_default_construct(it, insertRangeEnd);
+
+            if (insertRangeEnd > dataEnd_)
+            {
+                dataEnd_ = insertRangeEnd;
+            }
         }
         else
         {

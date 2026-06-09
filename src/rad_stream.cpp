@@ -137,9 +137,8 @@ bool stream::try_read_string8_in_batches_(vector<char>& buf)
             // Go backwards in the stream if necessary (i.e. we read past the end of the string).
             if (validCharCount < readCharCount)
             {
-                const auto extraCharCount = (readCharCount - validCharCount);
-                jump_behind(extraCharCount);
-                buf.pop_back(extraCharCount);
+                jump_behind(readCharCount - validCharCount);
+                buf.pop_back(stream_string8_batch_size_ - validCharCount);
             }
 
             return true;

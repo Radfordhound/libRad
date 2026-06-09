@@ -12,6 +12,7 @@
 #include "rad_memory.h"
 #include <cstddef>
 #include <memory>
+#include <stdexcept>
 #include <utility>
 #include <initializer_list>
 
