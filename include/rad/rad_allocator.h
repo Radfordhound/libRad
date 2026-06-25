@@ -7,11 +7,12 @@
 #ifndef RAD_ALLOCATOR_H_INCLUDED
 #define RAD_ALLOCATOR_H_INCLUDED
 
-#include "rad_base.h"
-#include "rad_memory.h"
 #include <cstddef>
 #include <type_traits>
 #include <new>
+
+#include "rad_base.h"
+#include "rad_memory.h"
 
 namespace rad
 {
@@ -27,7 +28,8 @@ public:
 
     virtual void* reallocate(
         void* ptr,
-        std::size_t size,
+        std::size_t oldSize,
+        std::size_t newSize,
         std::size_t alignment
     ) = 0;
 
@@ -107,7 +109,12 @@ public:
             // NOTE: trivially-copyable types must have trivial destructors
             // and must not have any non-trivial copy/move constructors/assignment
             // operators; so they are safe to perform bitwise-copies on.
-            return static_cast<T*>(reallocate(ptr, sizeof(T) * newCount, alignof(T)));
+            return static_cast<T*>(reallocate(
+                ptr,
+                sizeof(T) * oldCount,
+                sizeof(T) * newCount,
+                alignof(T)
+            ));
         }
         else
         {
@@ -147,7 +154,12 @@ public:
             // NOTE: trivially-copyable types must have trivial destructors
             // and must not have any non-trivial copy/move constructors/assignment
             // operators; so they are safe to perform bitwise-copies on.
-            return static_cast<T*>(reallocate(ptr, sizeof(T) * newCount, alignof(T)));
+            return static_cast<T*>(reallocate(
+                ptr,
+                sizeof(T) * oldCount,
+                sizeof(T) * newCount,
+                alignof(T)
+            ));
         }
         else
         {
@@ -208,7 +220,12 @@ public:
             // NOTE: trivially-copyable types must have trivial destructors
             // and must not have any non-trivial copy/move constructors/assignment
             // operators; so they are safe to perform bitwise-copies on.
-            return static_cast<T*>(reallocate(ptr, sizeof(T) * newCount, alignof(T)));
+            return static_cast<T*>(reallocate(
+                ptr,
+                sizeof(T) * oldCount,
+                sizeof(T) * newCount,
+                alignof(T)
+            ));
         }
         else
         {
@@ -284,7 +301,8 @@ public:
 
     RAD_API void* reallocate(
         void* ptr,
-        std::size_t size,
+        std::size_t oldSize,
+        std::size_t newSize,
         std::size_t alignment
     ) override;
 

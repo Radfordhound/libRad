@@ -25,10 +25,11 @@ void* default_allocator_t::allocate(
 
 void* default_allocator_t::reallocate(
     void* ptr,
-    std::size_t size,
+    std::size_t oldSize,
+    std::size_t newSize,
     std::size_t alignment)
 {
-    const auto newPtr = _aligned_realloc(ptr, size, alignment);
+    const auto newPtr = _aligned_realloc(ptr, newSize, alignment);
 
     if (!newPtr)
     {

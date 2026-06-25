@@ -476,6 +476,7 @@ public:
 
         const auto newPtr = static_cast<T*>(reallocate(
             oldBegin,
+            sizeof(T) * static_cast<std::size_t>(oldEnd - oldBegin),
             sizeof(T) * newCount,
             alignof(T)
         ));

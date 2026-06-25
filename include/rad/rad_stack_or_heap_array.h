@@ -69,13 +69,16 @@ class stack_or_heap_array
 
     T* reallocate_(size_type_ count)
     {
-        rad::destruct(begin(), end());
+        const auto oldCount = count_;
         count_ = 0;
+
+        rad::destruct(begin(), end());
 
         if (is_heap())
         {
             return static_cast<T*>(allocator_->reallocate(
                 data_,
+                sizeof(T) * oldCount,
                 sizeof(T) * count,
                 alignof(T)
             ));

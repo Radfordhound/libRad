@@ -25,16 +25,17 @@ void* default_allocator_t::allocate(
 
 void* default_allocator_t::reallocate(
     void* ptr,
-    std::size_t size,
+    std::size_t oldSize,
+    std::size_t newSize,
     std::size_t alignment)
 {
     // TODO: Look into ways to optimize this, such as possibly using mremap on linux?
     
-    const auto newPtr = allocate(size, alignment);
+    const auto newPtr = allocate(newSize, alignment);
 
     if (ptr)
     {
-        std::memcpy(newPtr, ptr, size);
+        std::memcpy(newPtr, ptr, newSize > oldSize ? oldSize : newSize);
         free(ptr);
     }
 
